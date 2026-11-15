@@ -2,22 +2,18 @@ services:
   - type: web
     name: chronospectra-api
     runtime: docker
-    plan: starter
+    plan: free
     dockerfilePath: ./backend/Dockerfile
     dockerContext: .
     healthCheckPath: /health
     autoDeploy: true
-    disk:
-      name: chronospectra-data
-      mountPath: /var/data
-      sizeGB: 10
     envVars:
       - key: PYTHONUNBUFFERED
         value: "1"
       - key: CHRONOSPECTRA_AUTH_DB
-        value: /var/data/chronospectra.sqlite3
+        value: /tmp/chronospectra.sqlite3
       - key: CHRONOSPECTRA_ZARR_ROOT
-        value: /var/data/processed/zarr
+        value: /tmp/chronospectra-zarr
       - key: CHRONOSPECTRA_COOKIE_SECURE
         value: "true"
       - key: CHRONOSPECTRA_COOKIE_SAMESITE
