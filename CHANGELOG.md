@@ -4,6 +4,26 @@ Notable Chronospectra changes are documented here. Dates use ISO 8601.
 
 ## Unreleased — 2026-11-15
 
+### Account, audio, and deployment polish
+
+- Configured Render to generate a persistent secret seed for Fernet-protected
+  birth dates, while continuing to support an explicitly configured Fernet key.
+  Added registration tests for seeded encryption and missing-secret failure.
+- Added a looping background music player with saved play/volume
+  preferences and playback controls in the observation sidebar.
+- Added a direct sidebar link to the seven-slide pitch deck and removed the
+  unused Vercel Analytics and Speed Insights components and dependencies.
+- Clarified the WWT startup status when tile metadata takes longer than usual,
+  and corrected the map badge so it reports QR3 data status without implying
+  that QR3 spectra are already available.
+- Retried the IRSA SIA2 capabilities request; it still returned HTTP 502, so no
+  QR3 products could be verified or staged. Synthetic products remain labeled
+  as demo data and are not represented as NASA observations.
+- Added SIA2 product identifiers and release/collection provenance to ingested
+  Zarr metadata and manifests, preserving the original archive URL separately
+  from the cutout URL; the observation epoch and FITS flag extension remain
+  attached to each product.
+
 ### Audit follow-up
 
 - Expanded the judge pitch deck to seven slides, including a concise live-demo

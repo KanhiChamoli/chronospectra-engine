@@ -498,7 +498,7 @@ export default function ObservatoryPage() {
               <p className="eyebrow">ALL-SKY OBSERVATORY / ICRS</p>
               <h1>Temporal sky explorer</h1>
             </div>
-            <span className="data-badge">QR3 SPECTRA · DR1 HiPS REFERENCE</span>
+            <span className="data-badge">QR3 DATA STATUS · DR1 HiPS REFERENCE</span>
           </div>
           <WorldWideTelescopeView
             anomalies={anomalies}

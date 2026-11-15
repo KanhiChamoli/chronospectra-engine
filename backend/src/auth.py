@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import hmac
 import logging
@@ -181,6 +182,31 @@ def _token_hash(token: str) -> str:
     return hashlib.sha256(token.encode("ascii")).hexdigest()
 
 
+def _pii_fernet() -> Fernet:
+    key = os.environ.get("CHRONOSPECTRA_PII_ENCRYPTION_KEY")
+    if key:
+        try:
+            return Fernet(key.encode("ascii"))
+        except (ValueError, UnicodeEncodeError) as exc:
+            logger.exception("The configured PII encryption key is invalid")
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Secure account storage is not configured correctly.",
+            ) from exc
+
+    seed = os.environ.get("CHRONOSPECTRA_PII_ENCRYPTION_SEED")
+    if seed:
+        derived_key = base64.urlsafe_b64encode(
+            hashlib.sha256(seed.encode("utf-8")).digest()
+        )
+        return Fernet(derived_key)
+
+    raise HTTPException(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        detail="Secure account storage is not configured. Contact the site administrator.",
+    )
+
+
 def _cookie_options() -> dict[str, bool | str]:
     same_site = os.environ.get("CHRONOSPECTRA_COOKIE_SAMESITE", "strict").lower()
     if same_site not in {"strict", "lax", "none"}:
@@ -196,20 +222,7 @@ def _cookie_options() -> dict[str, bool | str]:
 
 
 def _encrypt_date_of_birth(value: date) -> str:
-    key = os.environ.get("CHRONOSPECTRA_PII_ENCRYPTION_KEY")
-    if not key:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Secure account storage is not configured. Contact the site administrator.",
-        )
-    try:
-        return Fernet(key.encode("ascii")).encrypt(value.isoformat().encode("ascii")).decode("ascii")
-    except (ValueError, TypeError) as exc:
-        logger.exception("The configured PII encryption key is invalid")
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Secure account storage is not configured correctly.",
-        ) from exc
+    return _pii_fernet().encrypt(value.isoformat().encode("ascii")).decode("ascii")
 
 
 def _check_origin(request: Request) -> None:

@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { BookOpen, ChevronLeft, ExternalLink, Info, LogOut, Menu, Trash, UserRoundX } from "lucide-react";
+import { BookOpen, ChevronLeft, ExternalLink, Info, LogOut, Menu, Pause, Play, Presentation, Trash, UserRoundX, Volume2 } from "lucide-react";
+import { useBackgroundAudio } from "@/components/BackgroundAudioProvider";
 import type { AuthUser, Observation } from "@/types/auth";
 
 interface ObservationSidebarProps {
@@ -35,6 +36,7 @@ export function ObservationSidebar({
   onUpdateNotes,
 }: ObservationSidebarProps) {
   const [notes, setNotes] = useState<Record<number, string>>({});
+  const { isPlaying, volume, playbackError, toggleMusic, setVolume } = useBackgroundAudio();
 
   return (
     <aside className={`observatory-sidebar${open ? " expanded" : ""}`} aria-label="Observatory navigation">
@@ -92,7 +94,33 @@ export function ObservationSidebar({
             </button>
           </div>
         )}
+        <section className="sidebar-audio" aria-label="Background music controls">
+          <button
+            type="button"
+            className="sidebar-link music-toggle"
+            data-music-toggle
+            onClick={toggleMusic}
+            aria-pressed={isPlaying}
+          >
+            <span aria-hidden="true">{isPlaying ? <Pause size={15} /> : <Play size={15} />}</span>
+            <span>{isPlaying ? "Music on" : "Music off"}</span>
+          </button>
+          <label className="music-volume">
+            <span><Volume2 size={13} /> Volume <output>{Math.round(volume * 100)}%</output></span>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={volume}
+              onChange={(event) => setVolume(Number(event.target.value))}
+              aria-label="Background music volume"
+            />
+          </label>
+          {playbackError && <p className="music-error" role="status">{playbackError}</p>}
+        </section>
         <nav className="sidebar-footer" aria-label="About Chronospectra">
+          <Link href="/pitch-deck"><span aria-hidden="true"><Presentation size={15} /></span><span>Pitch deck</span></Link>
           <Link href="/credits"><span aria-hidden="true"><Info size={15} /></span><span>Data credits</span></Link>
           <Link href="/privacy-terms"><span aria-hidden="true"><BookOpen size={15} /></span><span>Privacy &amp; terms</span></Link>
           <a href="https://github.com/kanhichamoli/chronospectra-engine" target="_blank" rel="noreferrer"><span aria-hidden="true"><ExternalLink size={15} /></span><span>About / source</span></a>

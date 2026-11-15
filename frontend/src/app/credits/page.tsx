@@ -31,6 +31,11 @@ const credits = [
     description: "Planet X and SPHEREx challenge statement and participant resources.",
     url: "https://www.spaceappschallenge.org/2026/challenges/planet-x-and-spherex/?tab=resources",
   },
+  {
+    name: "Aventuras en Hyrule — Reylag Studios",
+    description: "Background music supplied by the project maintainer. Confirm the publisher's license before redistribution.",
+    url: "https://pixabay.com/music/adventure-aventuras-en-hyrule-307981/",
+  },
 ];
 
 export default function CreditsPage() {

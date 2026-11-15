@@ -165,6 +165,10 @@ def process_mef_to_zarr(
     target_id: str,
     target_name: str,
     target_coord: SkyCoord,
+    archive_collection: str = QR3_COLLECTION,
+    product_id: str | None = None,
+    access_url: str | None = None,
+    cutout_url: str | None = None,
     force: bool = False,
 ) -> dict[str, object]:
     """Convert one SPHEREx spectral-image MEF into a chunked, WCS-aware Zarr group.
@@ -179,10 +183,26 @@ def process_mef_to_zarr(
         except (zarr.errors.GroupNotFoundError, zarr.errors.PathNotFoundError):
             LOGGER.warning("Existing Zarr store is incomplete and will be regenerated")
         else:
-            if existing_group.attrs.get("complete") is True:
+            has_current_provenance = (
+                existing_group.attrs.get("archive_collection") == archive_collection
+                and existing_group.attrs.get("archive_product_id") == (product_id or "")
+                and existing_group.attrs.get("archive_access_url") == (access_url or "")
+                and existing_group.attrs.get("download_url") == (cutout_url or "")
+            )
+            if existing_group.attrs.get("complete") is True and has_current_provenance:
                 LOGGER.info("Zarr product already exists; skipping: %s", zarr_path)
-                return {"zarr_path": str(zarr_path), "status": "skipped-existing"}
-            LOGGER.warning("Existing Zarr group is incomplete and will be regenerated")
+                return {
+                    "zarr_path": str(zarr_path),
+                    "status": "skipped-existing",
+                    "release": _release_name(archive_collection),
+                    "archive_collection": archive_collection,
+                    "product_id": product_id,
+                    "access_url": access_url,
+                    "cutout_url": cutout_url,
+                }
+            LOGGER.warning(
+                "Existing Zarr group is incomplete or has stale provenance; regenerating"
+            )
 
     # FITS integer flags commonly use BZERO/BSCALE, which Astropy cannot
     # expose through a memory-mapped array.
@@ -298,6 +318,11 @@ def process_mef_to_zarr(
                 "target_id": target_id,
                 "schema_version": 1,
                 "target_name": target_name,
+                "release": _release_name(archive_collection),
+                "archive_collection": archive_collection,
+                "archive_product_id": product_id or "",
+                "archive_access_url": access_url or "",
+                "download_url": cutout_url or "",
                 "target_ra_deg": float(target_coord.ra.deg),
                 "target_dec_deg": float(target_coord.dec.deg),
                 "source_file": fits_path.name,
@@ -307,6 +332,9 @@ def process_mef_to_zarr(
                 "epoch_start_mjd": epoch_start_mjd,
                 "detector": detector,
                 "flux_unit": str(image_header.get("BUNIT", "MJy/sr")),
+                "flux_extension": "IMAGE",
+                "variance_extension": "VARIANCE",
+                "flags_extension": "FLAGS",
                 "healpix_nside": HEALPIX_NSIDE,
                 "healpix_ordering": "NESTED",
                 "healpix_index_available": hp is not None,
@@ -321,6 +349,9 @@ def process_mef_to_zarr(
     return {
         "zarr_path": str(zarr_path),
         "status": "created",
+        "release": _release_name(archive_collection),
+        "archive_collection": archive_collection,
+        "product_id": product_id,
         "epoch": epoch,
         "detector": detector,
     }
@@ -340,6 +371,27 @@ def _query_target(
     )
 
 
+def _release_name(collection: str) -> str:
+    """Name only the configured QR3 collection; do not infer other releases."""
+    return "QR3" if collection.casefold() == QR3_COLLECTION.casefold() else "unverified"
+
+
+def _product_identifier(row: Any, column_names: list[str]) -> str | None:
+    """Return an archive-supplied identifier without inventing one from a URL."""
+    for column in ("obs_publisher_did", "obs_id", "product_id", "id"):
+        if column not in column_names:
+            continue
+        value = row[column]
+        if value is None or np.ma.is_masked(value):
+            continue
+        if isinstance(value, np.generic):
+            value = value.item()
+        identifier = str(value).strip()
+        if identifier:
+            return identifier
+    return None
+
+
 def _download_target_products(
     results: Any,
     *,
@@ -347,13 +399,13 @@ def _download_target_products(
     target_coord: SkyCoord,
     raw_dir: Path,
     cutout_size_arcsec: float,
-) -> list[tuple[str, Path]]:
+) -> list[tuple[str, str, Path, str | None]]:
     if "access_url" not in results.colnames:
         raise ValueError("IRSA SIA2 response has no access_url column")
 
     target_dir = raw_dir / target_id
     target_dir.mkdir(parents=True, exist_ok=True)
-    downloads: list[tuple[str, Path]] = []
+    downloads: list[tuple[str, str, Path, str | None]] = []
     seen_urls: set[str] = set()
 
     for row in results:
@@ -375,7 +427,14 @@ def _download_target_products(
         if not destination.exists():
             LOGGER.info("Downloading %s", destination)
             _download(cutout, destination)
-        downloads.append((cutout, destination))
+        downloads.append(
+            (
+                access_url,
+                cutout,
+                destination,
+                _product_identifier(row, results.colnames),
+            )
+        )
     return downloads
 
 
@@ -506,6 +565,7 @@ def main() -> None:
     target_entries: list[dict[str, object]] = []
     manifest: dict[str, object] = {
         "service": IRSA_SIA2_URL,
+        "release": _release_name(args.collection),
         "collection": args.collection,
         "hips_manifest": str(hips_manifest),
         "targets": target_entries,
@@ -541,7 +601,7 @@ def main() -> None:
             "products": [],
         }
         products: list[dict[str, object]] = []
-        for access_url, fits_path in downloads:
+        for access_url, cutout_url, fits_path, product_id in downloads:
             zarr_path = zarr_root / target_id / f"{fits_path.stem}.zarr"
             product_result = process_mef_to_zarr(
                 fits_path,
@@ -549,10 +609,17 @@ def main() -> None:
                 target_id=target_id,
                 target_name=target_name,
                 target_coord=coordinate,
+                archive_collection=args.collection,
+                product_id=product_id,
+                access_url=access_url,
+                cutout_url=cutout_url,
                 force=args.force,
             )
             product_result["fits_path"] = str(fits_path)
             product_result["access_url"] = access_url
+            product_result["cutout_url"] = cutout_url
+            product_result["product_id"] = product_id
+            product_result["release"] = _release_name(args.collection)
             products.append(product_result)
         target_result["products"] = products
         target_entries.append(target_result)

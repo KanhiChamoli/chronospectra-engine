@@ -20,5 +20,5 @@ services:
         value: none
       - key: CHRONOSPECTRA_CORS_ORIGINS
         sync: false
-      - key: CHRONOSPECTRA_PII_ENCRYPTION_KEY
-        sync: false
+      - key: CHRONOSPECTRA_PII_ENCRYPTION_SEED
+        generateValue: true

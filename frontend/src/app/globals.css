@@ -264,6 +264,8 @@ h2 {
 .map-status {
   top: 13px;
   left: 13px;
+  max-width: 38%;
+  line-height: 1.45;
 }
 
 .map-hint {
@@ -1264,6 +1266,52 @@ h2 {
   margin-top: auto;
   padding-top: 10px;
   border-top: 1px solid var(--line);
+}
+
+.sidebar-audio {
+  margin: 8px 0;
+  padding: 6px 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: rgb(16 19 27 / 65%);
+}
+
+.music-toggle {
+  width: 100%;
+}
+
+.music-volume {
+  display: grid;
+  gap: 6px;
+  padding: 4px 9px 0 35px;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.music-volume > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.music-volume output {
+  margin-left: auto;
+  color: var(--cyan);
+  font-variant-numeric: tabular-nums;
+}
+
+.music-volume input {
+  width: 100%;
+  height: 14px;
+  accent-color: var(--cyan);
+  cursor: pointer;
+}
+
+.music-error {
+  margin: 4px 9px 0 35px;
+  color: #ff8798;
+  font-size: 8px;
+  line-height: 1.5;
 }
 
 .sky-section {

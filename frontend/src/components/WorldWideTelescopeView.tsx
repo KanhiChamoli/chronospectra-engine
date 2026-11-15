@@ -194,6 +194,11 @@ export function WorldWideTelescopeView({
     let retryFrame = 0;
     let propertiesTimer: number | undefined;
     const request = new AbortController();
+    const startupTimer = window.setTimeout(() => {
+      if (!disposed) {
+        setStatus("WWT is taking longer than usual; the DR1 imagery may still be streaming from IRSA.");
+      }
+    }, 15_000);
     retryFrame = window.requestAnimationFrame(() => {
       void (async () => {
         try {
@@ -243,10 +248,12 @@ export function WorldWideTelescopeView({
                   if (propertiesTimer !== undefined) {
                     window.clearInterval(propertiesTimer);
                   }
-                  setStatus("SPHEREx DR1 HiPS loaded · drag to pan · pinch or wheel to zoom");
+                  window.clearTimeout(startupTimer);
+                  setStatus("SPHEREx DR1 layer ready · tiles stream on demand · drag to pan · pinch or wheel to zoom");
                 }
               }, 250);
             } catch (error) {
+              window.clearTimeout(startupTimer);
               setStatus(
                 error instanceof Error
                   ? `SPHEREx HiPS unavailable: ${error.message}`
@@ -256,6 +263,7 @@ export function WorldWideTelescopeView({
           });
         } catch (error) {
           if (!disposed && !request.signal.aborted) {
+            window.clearTimeout(startupTimer);
             setStatus(
               error instanceof Error
                 ? `SPHEREx HiPS unavailable: ${error.message}`
@@ -274,6 +282,7 @@ export function WorldWideTelescopeView({
       if (propertiesTimer !== undefined) {
         window.clearInterval(propertiesTimer);
       }
+      window.clearTimeout(startupTimer);
     };
   }, [hipsBaseUrl, viewerId]);
 

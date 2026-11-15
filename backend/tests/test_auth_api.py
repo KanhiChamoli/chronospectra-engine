@@ -1,3 +1,5 @@
+import base64
+import hashlib
 import os
 import sqlite3
 import tempfile
@@ -63,6 +65,43 @@ class AuthApiTests(unittest.TestCase):
         self.assertEqual(self.register().status_code, 201)
         duplicate = self.register()
         self.assertEqual(duplicate.status_code, 409, duplicate.text)
+
+    def test_registration_uses_render_generated_encryption_seed(self) -> None:
+        seed = "render-generated-secret-seed"
+        with patch.dict(
+            os.environ,
+            {
+                "CHRONOSPECTRA_PII_ENCRYPTION_KEY": "",
+                "CHRONOSPECTRA_PII_ENCRYPTION_SEED": seed,
+            },
+        ):
+            response = self.register()
+            self.assertEqual(response.status_code, 201, response.text)
+
+        connection = sqlite3.connect(os.environ["CHRONOSPECTRA_AUTH_DB"])
+        try:
+            stored_dob = connection.execute(
+                "SELECT date_of_birth FROM users"
+            ).fetchone()[0]
+        finally:
+            connection.close()
+        derived_key = base64.urlsafe_b64encode(hashlib.sha256(seed.encode()).digest())
+        self.assertEqual(
+            Fernet(derived_key).decrypt(stored_dob.encode()).decode(),
+            "1994-04-12",
+        )
+
+    def test_registration_fails_when_no_encryption_secret_is_configured(self) -> None:
+        with patch.dict(
+            os.environ,
+            {
+                "CHRONOSPECTRA_PII_ENCRYPTION_KEY": "",
+                "CHRONOSPECTRA_PII_ENCRYPTION_SEED": "",
+            },
+        ):
+            response = self.register()
+        self.assertEqual(response.status_code, 503)
+        self.assertIn("Secure account storage", response.json()["detail"])
 
     def test_registration_login_and_observation_crud(self) -> None:
         self.register_and_sign_in()
