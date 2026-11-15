@@ -36,6 +36,12 @@ const credits = [
     description: "Background music supplied by the project maintainer. Confirm the publisher's license before redistribution.",
     url: "https://pixabay.com/music/adventure-aventuras-en-hyrule-307981/",
   },
+  {
+    name: "Space ambient music fragment.Wav — Clacksberg",
+    description: "CC0 1.0 public-domain track used in the pitch-demo video.",
+    url: "https://freesound.org/people/Clacksberg/sounds/491288",
+    licenseUrl: "https://creativecommons.org/publicdomain/zero/1.0/",
+  },
 ];
 
 export default function CreditsPage() {
@@ -54,6 +60,9 @@ export default function CreditsPage() {
           <li key={credit.name}>
             <a href={credit.url} target="_blank" rel="noreferrer">{credit.name} ↗</a>
             <p>{credit.description}</p>
+            {"licenseUrl" in credit && (
+              <a href={credit.licenseUrl} target="_blank" rel="noreferrer">CC0 1.0 license ↗</a>
+            )}
           </li>
         ))}
       </ul>

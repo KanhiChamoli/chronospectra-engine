@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 
 const slideFooter = "CHRONOSPECTRA · NASA SPACE APPS · © KANHI CHAMOLI";
 
@@ -13,6 +14,42 @@ export default function PitchDeckPage() {
           Print / Save as PDF
         </button>
       </header>
+
+      <article className="pitch-slide pitch-demo-slide" aria-labelledby="pitch-demo-heading">
+        <p className="eyebrow">CHRONOSPECTRA · 30-SECOND DEMO</p>
+        <h2 id="pitch-demo-heading">Explore the observatory in half a minute.</h2>
+        <video
+          className="pitch-demo-player"
+          controls
+          playsInline
+          preload="metadata"
+          poster="/chronospectra-demo-poster.png"
+          aria-label="Chronospectra 30-second product demo with British-English narration"
+        >
+          <source src="/chronospectra-demo.mp4" type="video/mp4" />
+          <track
+            kind="captions"
+            src="/chronospectra-demo.en.vtt"
+            srcLang="en-GB"
+            label="English (British)"
+            default
+          />
+          Your browser does not support embedded video.
+        </video>
+        <Image
+          className="pitch-demo-print-poster"
+          src="/chronospectra-demo-poster.png"
+          alt="Chronospectra's time-by-wavelength observatory demo"
+          width={1280}
+          height={720}
+          unoptimized
+        />
+        <p className="pitch-demo-note">British-English narration · English captions · CC0 ambient soundtrack</p>
+        <p className="pitch-demo-warning">
+          <strong>Data status:</strong> the video uses synthetic demo examples, not verified SPHEREx QR3 observations.
+        </p>
+        <footer>{slideFooter}</footer>
+      </article>
 
       <article className="pitch-slide pitch-title-slide">
         <p className="eyebrow">NASA SPACE APPS · PLANET X &amp; SPHEREx</p>
@@ -127,7 +164,7 @@ export default function PitchDeckPage() {
       </article>
 
       <article className="pitch-slide">
-        <p className="eyebrow">A 60-SECOND DEMO</p>
+        <p className="eyebrow">LIVE DEMO WALKTHROUGH</p>
         <h2>Start with a question. Leave with a lead to investigate.</h2>
         <div className="pitch-facts">
           <div>

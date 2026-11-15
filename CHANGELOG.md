@@ -4,6 +4,17 @@ Notable Chronospectra changes are documented here. Dates use ISO 8601.
 
 ## Unreleased — 2026-11-15
 
+### Pitch-deck demo
+
+- Added a 30-second, 720p product-demo video with British-English narration,
+  synchronized captions, and a CC0 ambient soundtrack. The animation labels
+  spectra and anomaly examples as synthetic and states that no verified QR3
+  products are staged.
+- Added the video before the seven-slide deck, with native playback controls,
+  captions, a print poster, and a source/license credit for its soundtrack.
+- Added an optional video-generation script and isolated media requirements;
+  these do not add dependencies to the production frontend or API.
+
 ### Account, audio, and deployment polish
 
 - Configured Render to generate a persistent secret seed for Fernet-protected
