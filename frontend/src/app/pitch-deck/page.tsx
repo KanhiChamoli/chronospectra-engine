@@ -97,10 +97,11 @@ export default function PitchDeckPage() {
           <span>Next.js + WWT<br /><small>map · matrix · SED</small></span>
         </div>
         <p className="pitch-lead">
-          Vercel hosts the frontend; a persistent FastAPI service handles local
-          data and accounts. Cloudflare R2 is an optional product/tile store:
-          data transferred within Cloudflare has no egress fee, while storage,
-          request, compute, and delivery costs still apply.
+          Vercel hosts the frontend; the current Render free-tier API stores
+          SQLite and Zarr under ephemeral /tmp paths, so data may be lost on
+          restart. Use persistent private storage before collecting real data.
+          Cloudflare R2 is optional; storage, operations, compute, and delivery
+          costs may still apply.
         </p>
         <p className="pitch-slide-number">05 / 07</p>
         <footer>{slideFooter}</footer>

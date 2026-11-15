@@ -7,7 +7,8 @@ Notable Chronospectra changes are documented here. Dates use ISO 8601.
 ### Audit follow-up
 
 - Expanded the judge pitch deck to seven slides, including a concise live-demo
-  flow with explicit synthetic-data caveats.
+  flow with explicit synthetic-data caveats and an accurate note about the
+  hosted API's ephemeral free-tier storage.
 - Fixed anomaly scan caching to separate Zarr roots, cap cache growth, and
   refresh scans within 60 seconds so newly staged products are not hidden for
   an hour. Reused Zarr groups, arrays, and WCS metadata for repeated spectrum
