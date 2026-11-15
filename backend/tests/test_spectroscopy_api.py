@@ -10,7 +10,9 @@ from fastapi.testclient import TestClient
 
 from backend.main import app
 from backend.src.spectroscopy import (
+    ANOMALY_CACHE_TTL_SECONDS,
     NoSpectralDataError,
+    _PRODUCT_PAIR_CACHE,
     extract_spectrum,
     find_anomalies,
     get_data_status,
@@ -107,6 +109,9 @@ class SpectroscopyTests(unittest.TestCase):
         )
         self.previous_root = os.environ.get("CHRONOSPECTRA_ZARR_ROOT")
         os.environ["CHRONOSPECTRA_ZARR_ROOT"] = str(self.root)
+        # The cache is keyed by epoch pair but holds absolute sampled fluxes;
+        # clear it per-test so each temp Zarr root is rescanned.
+        _PRODUCT_PAIR_CACHE.clear()
 
     def tearDown(self) -> None:
         if self.previous_root is None:

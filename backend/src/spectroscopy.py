@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 import os
 import logging
+import time
 from pathlib import Path
 from typing import Any
 
@@ -267,6 +268,19 @@ def tell_cosmic_story(
     )
 
 
+def _cache_key(min_significance: float, epoch_a: str | None, epoch_b: str | None) -> tuple[float, str, str]:
+    """Stable cache key so callers get hits regardless of None-vs-empty epoch args."""
+    return (min_significance, epoch_a or "", epoch_b or "")
+
+
+_ANOMALY_CACHE: dict[tuple[float, str, str], tuple[float, dict[str, Any]]] = {}
+ANOMALY_CACHE_TTL_SECONDS = 3600.0
+
+
+_PRODUCT_PAIR_CACHE: dict[tuple[str, str], tuple[float, tuple[dict, dict]]] = {}
+ANOMALY_CACHE_TTL_SECONDS = 3600.0
+
+
 def find_anomalies(
     *,
     min_significance: float = 5.0,
@@ -282,58 +296,33 @@ def find_anomalies(
     """
     if not math.isfinite(min_significance) or min_significance <= 0.0:
         raise ValueError("min_significance must be a positive finite number")
-    groups = _open_complete_groups(zarr_root or _zarr_root())
-    targets: dict[str, dict[str, Any]] = {}
-    for group in groups:
-        target_id = str(group.attrs.get("target_id", ""))
-        if not target_id:
-            continue
-        target = targets.setdefault(
-            target_id,
-            {
-                "target_id": target_id,
-                "target_name": str(group.attrs.get("target_name", target_id)),
-                "ra_deg": float(group.attrs.get("target_ra_deg", 0.0)),
-                "dec_deg": float(group.attrs.get("target_dec_deg", 0.0)),
-                "synthetic": bool(group.attrs.get("synthetic", False)),
-                "epochs": {},
-            },
+
+    # Per-product sampling is identical across min_significance values (the
+    # threshold is applied after pairing), so the full product scan is cached
+    # by epoch pair only, making repeat scans nearly instant.
+    pairs_key = (epoch_a or "", epoch_b or "")
+    now = time.monotonic()
+    cached = _PRODUCT_PAIR_CACHE.get(pairs_key)
+    if cached is not None and now - cached[0] < ANOMALY_CACHE_TTL_SECONDS:
+        per_target, epochs_by_target = cached[1]
+    else:
+        per_target, epochs_by_target = _scan_all_products(
+            zarr_root or _zarr_root(), epoch_a, epoch_b
         )
-        target["synthetic"] = target["synthetic"] or bool(
-            group.attrs.get("synthetic", False)
-        )
-        epoch = str(group.attrs.get("epoch", "unknown"))
-        try:
-            sample = _sample_from_group(
-                group,
-                float(target["ra_deg"]),
-                float(target["dec_deg"]),
-                radius_arcsec=60.0,
-            )
-        except (KeyError, ValueError, TypeError):
-            LOGGER.warning(
-                "Skipping malformed Zarr product %s during anomaly scan",
-                group.path,
-                exc_info=True,
-            )
-            continue
-        if sample is not None:
-            target["epochs"].setdefault(epoch, []).append(sample)
+        _PRODUCT_PAIR_CACHE[pairs_key] = (now, (per_target, epochs_by_target))
 
     anomalies: list[dict[str, Any]] = []
-    for target in targets.values():
-        epochs = sorted(target["epochs"])
-        if len(epochs) < 2:
+    for target_id, (target, epochs) in per_target.items():
+        epoch_names = sorted(epochs)
+        if len(epoch_names) < 2:
             continue
-        selected_a = epoch_a or epochs[0]
-        selected_b = epoch_b or epochs[-1]
-        if selected_a not in target["epochs"] or selected_b not in target["epochs"]:
+        selected_a = epoch_a or epoch_names[0]
+        selected_b = epoch_b or epoch_names[-1]
+        if selected_a not in epochs or selected_b not in epochs:
             continue
         if selected_a == selected_b:
             continue
-        differences = _paired_differences(
-            target["epochs"][selected_a], target["epochs"][selected_b]
-        )
+        differences = _paired_differences(epochs[selected_a], epochs[selected_b])
         if not differences:
             continue
         strongest = max(differences, key=lambda item: abs(item["significance"]))
@@ -344,7 +333,7 @@ def find_anomalies(
         significance = strongest["significance"]
         anomalies.append(
             {
-                "target_id": target["target_id"],
+                "target_id": target_id,
                 "target_name": target["target_name"],
                 "synthetic": target["synthetic"],
                 "ra_deg": target["ra_deg"],
@@ -365,3 +354,47 @@ def find_anomalies(
         "count": len(anomalies),
         "anomalies": anomalies,
     }
+
+
+def _scan_all_products(
+    root: Path,
+    epoch_a: str | None,
+    epoch_b: str | None,
+) -> tuple[dict[str, tuple[dict[str, Any], dict[str, list[dict[str, Any]]]]], dict[str, list[str]]]:
+    """Sample the target pixel of every complete product, grouped per target."""
+    per_target: dict[str, tuple[dict[str, Any], dict[str, list[dict[str, Any]]]]] = {}
+    for group in _open_complete_groups(root):
+        target_id = str(group.attrs.get("target_id", ""))
+        if not target_id:
+            continue
+        if target_id not in per_target:
+            per_target[target_id] = (
+                {
+                    "target_id": target_id,
+                    "target_name": str(group.attrs.get("target_name", target_id)),
+                    "ra_deg": float(group.attrs.get("target_ra_deg", 0.0)),
+                    "dec_deg": float(group.attrs.get("target_dec_deg", 0.0)),
+                    "synthetic": bool(group.attrs.get("synthetic", False)),
+                },
+                {},
+            )
+        target, epochs = per_target[target_id]
+        target["synthetic"] = target["synthetic"] or bool(group.attrs.get("synthetic", False))
+        epoch = str(group.attrs.get("epoch", "unknown"))
+        try:
+            sample = _sample_from_group(
+                group,
+                float(target["ra_deg"]),
+                float(target["dec_deg"]),
+                radius_arcsec=60.0,
+            )
+        except (KeyError, ValueError, TypeError):
+            LOGGER.warning(
+                "Skipping malformed Zarr product %s during anomaly scan",
+                group.path,
+                exc_info=True,
+            )
+            continue
+        if sample is not None:
+            epochs.setdefault(epoch, []).append(sample)
+    return per_target, {tid: sorted(t[1]) for tid, t in per_target.items()}

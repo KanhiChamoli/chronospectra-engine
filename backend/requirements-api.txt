@@ -4,3 +4,5 @@ numpy>=1.26,<2.3
 zarr>=2.18,<3
 astropy>=6.1
 cryptography>=44
+prometheus-fastapi-instrumentator>=7.0
+slowapi>=0.1.9
