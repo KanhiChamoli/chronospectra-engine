@@ -1,0 +1,59 @@
+name: Check for SPHEREx QR3 updates
+
+on:
+  # Poll monthly so newly published products are picked up without waiting
+  # for the next six-month science epoch boundary.
+  schedule:
+    - cron: "17 6 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: spherex-qr3-ingestion
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    name: Query IRSA and stage new QR3 products
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      # Configure these as GitHub Actions repository/environment secrets.
+      # Never substitute literal credentials or print them in workflow logs.
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_BUCKET: ${{ secrets.R2_BUCKET }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install ingestion dependencies
+        run: python -m pip install --upgrade pip && python -m pip install -r backend/requirements.txt
+
+      - name: Validate Cloudflare R2 secrets
+        shell: bash
+        run: |
+          missing=()
+          for name in R2_ACCOUNT_ID R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_BUCKET; do
+            if [[ -z "${!name}" ]]; then
+              missing+=("$name")
+            fi
+          done
+          if (( ${#missing[@]} )); then
+            echo "::error::Configure these GitHub Actions secrets before running ingestion: ${missing[*]}"
+            exit 1
+          fi
+
+      - name: Query IRSA, convert QR3 products, and upload processed outputs
+        run: python backend/src/ingest_spherex.py --upload-r2
