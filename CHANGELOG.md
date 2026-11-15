@@ -6,10 +6,10 @@ Notable Chronospectra changes are documented here. Dates use ISO 8601.
 
 ### Pitch-deck demo
 
-- Added a 30-second, 720p product-demo video with British-English narration,
-  synchronized captions, and a CC0 ambient soundtrack. The animation labels
-  spectra and anomaly examples as synthetic and states that no verified QR3
-  products are staged.
+- Added a 30-second, 720p product-demo video with a British-English female
+  voice-over, synchronized captions, and a CC0 ambient soundtrack. The animation
+  labels spectra and anomaly examples as synthetic and states that no verified
+  QR3 products are staged.
 - Added the video before the seven-slide deck, with native playback controls,
   captions, a print poster, and a source/license credit for its soundtrack.
 - Added an optional video-generation script and isolated media requirements;

@@ -32,7 +32,7 @@ NARRATION = (
     "Today's catalogue is synthetic demo data, not verified SPHEREx Quick Release Three observations. "
     "The workflow is ready for verified products."
 )
-VOICE = "en-GB-RyanNeural"
+VOICE = "en-GB-SoniaNeural"
 ACCENT = (81, 219, 246, 255)
 BLUE = (83, 148, 255, 255)
 GOLD = (255, 202, 111, 255)

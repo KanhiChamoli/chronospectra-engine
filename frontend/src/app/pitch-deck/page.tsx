@@ -24,7 +24,7 @@ export default function PitchDeckPage() {
           playsInline
           preload="metadata"
           poster="/chronospectra-demo-poster.png"
-          aria-label="Chronospectra 30-second product demo with British-English narration"
+          aria-label="Chronospectra 30-second product demo with British-English female narration"
         >
           <source src="/chronospectra-demo.mp4" type="video/mp4" />
           <track
@@ -44,7 +44,7 @@ export default function PitchDeckPage() {
           height={720}
           unoptimized
         />
-        <p className="pitch-demo-note">British-English narration · English captions · CC0 ambient soundtrack</p>
+        <p className="pitch-demo-note">British-English female narration · English captions · CC0 ambient soundtrack</p>
         <p className="pitch-demo-warning">
           <strong>Data status:</strong> the video uses synthetic demo examples, not verified SPHEREx QR3 observations.
         </p>
