@@ -11,6 +11,12 @@ initialization and overlays are included in the frontend. The data browser
 does not manufacture missing samples or claim that a statistical candidate
 alone establishes a physical discovery.
 
+The observatory now includes an original, responsive sky-explorer shell,
+catalog search, WWT viewport controls, object details, and an account-backed
+observation logbook. Authentication is intentionally fail-closed: public
+registration requires a configured Cloudflare Turnstile site/secret pair, an
+SMTP verification sender, and an encryption key for date-of-birth data.
+
 ## Architecture
 
 ```mermaid
@@ -19,11 +25,14 @@ flowchart LR
     Next[Next.js observatory<br/>WWT + SED + matrix]
     API[FastAPI<br/>spectrum + anomaly endpoints]
     Zarr[(Zarr detector samples<br/>flux, variance, flags, WCS)]
+    Accounts[(SQLite<br/>accounts + sessions + logbook)]
     IRSA[IRSA SIA2 / official DR1 HiPS]
     R2[(Cloudflare R2<br/>optional static HiPS mirror)]
 
     Visitor --> Next
     Next -->|coordinate query| API
+    Next -->|verified session| API
+    API --> Accounts
     API --> Zarr
     IRSA -->|QR3 MEFs| Zarr
     Next -->|official DR1 visualization| IRSA
@@ -32,8 +41,8 @@ flowchart LR
 ```
 
 ```text
-frontend/  Next.js App Router, WWT WebGL engine, Recharts, responsive UI
-backend/   FastAPI endpoints, IRSA ingestion, Zarr extraction and comparisons
+frontend/  Next.js App Router, WWT WebGL engine, Recharts, Lucide icons, UI
+backend/   FastAPI endpoints, SQLite accounts/logbook, IRSA ingestion, Zarr
 ```
 
 ### Data-release boundary
@@ -108,6 +117,12 @@ Useful endpoints:
 | `GET /api/v1/spectra?ra_deg=...&dec_deg=...` | Nearest-pixel samples grouped by epoch |
 | `GET /api/v1/anomalies?min_significance=5` | Epoch-differential candidates |
 | `GET /api/v1/anomalies?epoch_a=...&epoch_b=...` | Candidates for the selected epoch pair |
+| `POST /api/v1/auth/register` | CAPTCHA-checked account creation and verification email |
+| `POST /api/v1/auth/verify-email` | Verify an email using its one-time token |
+| `POST /api/v1/auth/login`, `POST /api/v1/auth/logout`, `GET /api/v1/auth/me` | Cookie-backed session lifecycle |
+| `GET/POST /api/v1/observations` | List or save the signed-in user's observations |
+| `PATCH/DELETE /api/v1/observations/{id}` | Edit notes or remove an owned observation |
+| `DELETE /api/v1/auth/me` | Delete the signed-in account and cascade its observations/sessions |
 
 Set `CHRONOSPECTRA_ZARR_ROOT` if the Zarr tree is mounted elsewhere.
 `CHRONOSPECTRA_CORS_ORIGINS` is a comma-separated allowlist of browser origins;
@@ -116,6 +131,37 @@ do not use `*` with credentials.
 The sample `.env.example` files document the supported settings; the server
 process needs those variables set in its environment (they are not loaded
 automatically from a `.env` file).
+
+#### Account and email configuration
+
+The API stores profiles, hashed sessions, and observations in a local SQLite
+database (`CHRONOSPECTRA_AUTH_DB`). Use a persistent disk for this database;
+do not place the API on an ephemeral/serverless filesystem. Passwords are
+salted scrypt hashes. Date of birth is encrypted with Fernet and is never
+returned by the profile endpoint. Back up `CHRONOSPECTRA_PII_ENCRYPTION_KEY`
+separately from the database; losing or rotating the key without an explicit
+migration makes stored birth dates unreadable.
+
+Generate a new encryption key and configure the required backend secrets in
+the API host's environment:
+
+```powershell
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+Set `CHRONOSPECTRA_TURNSTILE_SECRET_KEY` from Cloudflare Turnstile and put the
+matching public site key in `frontend/.env.local` as
+`NEXT_PUBLIC_TURNSTILE_SITE_KEY`. Registration is disabled until both sides
+are set. Configure `CHRONOSPECTRA_SMTP_HOST`, `PORT`, `USER`, `PASSWORD`,
+`FROM`, and `CHRONOSPECTRA_FRONTEND_URL` so registration can send its
+24-hour verification link. SMTP STARTTLS is on by default.
+
+For local development, set `CHRONOSPECTRA_COOKIE_SECURE=false` and
+`CHRONOSPECTRA_COOKIE_SAMESITE=strict`. In production use HTTPS and set
+`CHRONOSPECTRA_COOKIE_SECURE=true`. If the frontend and API are on different
+sites, use `CHRONOSPECTRA_COOKIE_SAMESITE=none`, HTTPS, and an exact
+`CHRONOSPECTRA_CORS_ORIGINS` allowlist. Add API rate limiting at the hosting
+gateway before opening account endpoints to the public internet.
 
 If the page reports that it cannot reach the API, verify `http://localhost:8000/health`
 and keep the FastAPI process running in its own terminal. For a deployed frontend,
@@ -145,6 +191,24 @@ requests a spectrum at that coordinate.
 The map's **External survey** menu can layer the IRSA-hosted AllWISE RGB or
 2MASS color HiPS images over SPHEREx. These are imaging references, not QR3
 spectral data.
+
+The account dialog collects name, email, date of birth, a 12-character-minimum
+password, required terms/privacy consent, and a Turnstile challenge. Users must
+verify email before signing in. The left logbook saves targets and notes to
+the authenticated API; the API scopes every read/update/delete by account.
+The map uses browser geolocation only after the browser's permission prompt,
+and displays coordinates without sending them to a reverse-geocoding provider.
+The bottom toolbar controls WWT grids, atmospheric horizon, cyan
+constellation lines/art/labels, ecliptic/meridian guides, night-mode colors,
+fullscreen, and the current field of view. Solar-system labels are provided by
+WWT; the local catalog search includes reference entries and states when
+catalog metadata is unavailable or approximate.
+
+**Operational notice:** the included Privacy Policy & Terms page is a
+prototype notice, not legal advice. Review and adapt it for the deployed
+operator, jurisdiction, retention and deletion process before using real
+personal data. Protect and back up the encryption key; secure the API with
+HTTPS, a persistent private database, backups, and gateway rate limits.
 
 ### 3. Ingest data (Phase 1)
 

@@ -6,6 +6,19 @@ Notable Chronospectra changes are documented here. Dates use ISO 8601.
 
 ### Added
 
+- Added a responsive, clean-room sky-explorer layout with catalog/anomaly
+  search, target detail cards, persistent viewport labels, live field-of-view
+  readout, WWT grid/atmosphere/constellation toggles, ecliptic/meridian guides,
+  location/time displays, fullscreen, and night mode.
+- Added SQLite-backed account registration, Cloudflare Turnstile verification,
+  expiring email-confirmation links, scrypt password hashes, secure HTTP-only
+  session cookies, encrypted date-of-birth storage, and per-user observation
+  create/read/update/delete endpoints.
+- Added a collapsible observation logbook, map-target save action, editable
+  notes, email-verification page, prototype privacy/terms page, and data credits
+  page with NASA, Gaia, SIMBAD, WWT, and Stellarium Web design acknowledgement.
+- Added automated API tests for required registration consent, email
+  verification, login, private sessions, and observation CRUD.
 - Replaced the demo-only warning panel with a clearly labeled synthetic demo
   status (the local API currently reports 1,020 synthetic products, not a
   verified QR3 release) and direct links to the challenge-listed IRSA archive,
@@ -33,6 +46,13 @@ Notable Chronospectra changes are documented here. Dates use ISO 8601.
 
 ### Operational notes
 
+- Public registration remains disabled until Turnstile keys, SMTP settings,
+  and `CHRONOSPECTRA_PII_ENCRYPTION_KEY` are configured. Keep the SQLite
+  account database on persistent private storage and back up the encryption
+  key separately. Cross-site production deployments require HTTPS,
+  credentialed CORS, and `SameSite=None; Secure` cookies.
+- The Privacy Policy & Terms page is a prototype notice and must be reviewed
+  for the deploying operator and jurisdiction before collecting real user data.
 - The GitHub workflow requires `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`,
   `R2_SECRET_ACCESS_KEY`, and `R2_BUCKET` Actions secrets.
 - The ingestion command queries IRSA on each run; the schedule polls monthly

@@ -1,10 +1,13 @@
 """FastAPI entry point for Chronospectra spectral extraction and anomaly screening."""
 
 import os
+from contextlib import asynccontextmanager
+from collections.abc import AsyncIterator
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
+from backend.src.auth import initialize_auth_db, router as auth_router
 from backend.src.spectroscopy import (
     NoSpectralDataError,
     extract_spectrum,
@@ -12,10 +15,18 @@ from backend.src.spectroscopy import (
     get_data_status,
 )
 
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    initialize_auth_db()
+    yield
+
+
 app = FastAPI(
     title="Chronospectra API",
     description="API foundation for SPHEREx data products.",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 allowed_origins = [
@@ -29,10 +40,11 @@ allowed_origins = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
-    allow_credentials=False,
-    allow_methods=["GET"],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+app.include_router(auth_router)
 
 
 @app.get("/health")

@@ -14,6 +14,7 @@ async function getJson<T>(path: string, signal?: AbortSignal): Promise<T> {
     response = await fetch(`${apiBaseUrl}${path}`, {
       method: "GET",
       headers: { Accept: "application/json" },
+      credentials: "include",
       cache: "no-store",
       signal,
     });

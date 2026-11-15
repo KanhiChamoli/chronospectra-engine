@@ -2,17 +2,34 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { Search, Sparkles } from "lucide-react";
 import { AnomalyList } from "@/components/AnomalyList";
+import { AuthDialog } from "@/components/AuthDialog";
 import { DualAxisMatrix } from "@/components/DualAxisMatrix";
+import { ObjectDetailPanel } from "@/components/ObjectDetailPanel";
+import { ObservationSidebar } from "@/components/ObservationSidebar";
 import { SedModal } from "@/components/SedModal";
+import { ViewportToolbar } from "@/components/ViewportToolbar";
 import { WorldWideTelescopeView } from "@/components/WorldWideTelescopeView";
 import { getAnomalies, getDataStatus, getSpectrum } from "@/lib/api";
+import {
+  createObservation,
+  deleteAccount,
+  deleteObservation,
+  getCurrentUser,
+  getObservations,
+  signOut,
+  updateObservationNotes,
+} from "@/lib/auth";
+import { celestialCatalog, searchCelestialTargets, type CelestialTarget } from "@/lib/celestialCatalog";
 import type {
   Anomaly,
   AnomalyResponse,
   DataStatusResponse,
   SpectrumResponse,
 } from "@/types/spectroscopy";
+import type { AuthUser, Observation } from "@/types/auth";
+import { defaultViewportSettings, type ViewportSettings } from "@/types/viewport";
 
 const hipsUrl =
   process.env.NEXT_PUBLIC_HIPS_BASE_URL ??
@@ -32,7 +49,24 @@ export default function ObservatoryPage() {
   const [epochB, setEpochB] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [initialTarget, setInitialTarget] = useState<{ raDeg: number; decDeg: number } | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [observations, setObservations] = useState<Observation[]>([]);
+  const [observationsLoading, setObservationsLoading] = useState(false);
+  const [observationsError, setObservationsError] = useState("");
+  const [authOpen, setAuthOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [searchText, setSearchText] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [selectedObject, setSelectedObject] = useState<CelestialTarget | null>(null);
+  const [objectActionStatus, setObjectActionStatus] = useState("");
+  const [viewportSettings, setViewportSettings] = useState<ViewportSettings>(defaultViewportSettings);
+  const [fieldOfView, setFieldOfView] = useState(0);
+  const [nightMode, setNightMode] = useState(false);
+  const [location, setLocation] = useState<{ latitude: number; longitude: number; label: string } | null>(null);
+  const [locationStatus, setLocationStatus] = useState("Requesting location permission…");
+  const [sidebarError, setSidebarError] = useState("");
   const spectrumRequest = useRef<AbortController | null>(null);
+  const pendingSave = useRef<CelestialTarget | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -46,6 +80,61 @@ export default function ObservatoryPage() {
         }
       });
     return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    void getCurrentUser()
+      .then((currentUser) => {
+        if (active) setUser(currentUser);
+      })
+      .catch(() => {
+        if (active) setUser(null);
+      });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
+      setObservations([]);
+      setObservationsLoading(false);
+      return;
+    }
+    let active = true;
+    setObservationsLoading(true);
+    setObservationsError("");
+    void getObservations()
+      .then((items) => {
+        if (active) setObservations(items);
+      })
+      .catch((error: unknown) => {
+        if (active) setObservationsError(error instanceof Error ? error.message : "Could not load your observations.");
+      })
+      .finally(() => {
+        if (active) setObservationsLoading(false);
+      });
+    return () => { active = false; };
+  }, [user]);
+
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      setLocationStatus("Location is not available in this browser.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        const latitude = coords.latitude;
+        const longitude = coords.longitude;
+        setLocation({
+          latitude,
+          longitude,
+          label: `${latitude.toFixed(3)}°, ${longitude.toFixed(3)}°`,
+        });
+        setLocationStatus("");
+      },
+      () => setLocationStatus("Location unavailable · allow location access"),
+      { enableHighAccuracy: false, maximumAge: 300_000, timeout: 10_000 },
+    );
   }, []);
 
   useEffect(() => {
@@ -76,6 +165,13 @@ export default function ObservatoryPage() {
     [epochA, spectrum],
   );
   const anomalies = anomalyResponse?.anomalies ?? [];
+
+  const updateCoordinateUrl = useCallback((raDeg: number, decDeg: number) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("ra", raDeg.toFixed(6));
+    url.searchParams.set("dec", decDeg.toFixed(6));
+    window.history.replaceState(null, "", url);
+  }, []);
 
   const showSpectrum = useCallback(async (raDeg: number, decDeg: number) => {
     spectrumRequest.current?.abort();
@@ -129,39 +225,200 @@ export default function ObservatoryPage() {
     }
     const target = { raDeg, decDeg };
     setInitialTarget(target);
+    setSelectedObject({
+      id: `url-${raDeg.toFixed(4)}-${decDeg.toFixed(4)}`,
+      name: "Shared sky position",
+      category: "ICRS coordinate link",
+      aliases: [],
+      raDeg,
+      decDeg,
+      summary: "A coordinate shared in the URL. Object identification depends on available catalog data.",
+      source: "Coordinate deep link",
+    });
     void showSpectrum(raDeg, decDeg);
   }, [showSpectrum]);
 
   useEffect(() => () => spectrumRequest.current?.abort(), []);
 
-  const updateCoordinateUrl = useCallback((raDeg: number, decDeg: number) => {
-    const url = new URL(window.location.href);
-    url.searchParams.set("ra", raDeg.toFixed(6));
-    url.searchParams.set("dec", decDeg.toFixed(6));
-    window.history.replaceState(null, "", url);
-  }, []);
+  const selectTarget = useCallback((target: CelestialTarget) => {
+    setSelectedObject(target);
+    setInitialTarget({ raDeg: target.raDeg, decDeg: target.decDeg });
+    updateCoordinateUrl(target.raDeg, target.decDeg);
+    setSearchText("");
+    setSearchOpen(false);
+    setObjectActionStatus("");
+  }, [updateCoordinateUrl]);
 
   const selectSkyPosition = useCallback((raDeg: number, decDeg: number) => {
     updateCoordinateUrl(raDeg, decDeg);
+    const nearest = celestialCatalog.find((target) => {
+      const dra = (target.raDeg - raDeg) * Math.cos(decDeg * Math.PI / 180);
+      const ddec = target.decDeg - decDeg;
+      return Math.hypot(dra, ddec) < 0.1;
+    });
+    setSelectedObject(nearest ?? {
+      id: `sky-${raDeg.toFixed(4)}-${decDeg.toFixed(4)}`,
+      name: "Sky position",
+      category: "ICRS coordinate",
+      aliases: [],
+      raDeg,
+      decDeg,
+      summary: "A coordinate selected in the sky viewer. Available science products are queried separately; no object identification is implied.",
+      source: "WWT sky selection",
+    });
+    setObjectActionStatus("");
     void showSpectrum(raDeg, decDeg);
   }, [showSpectrum, updateCoordinateUrl]);
 
   const selectAnomaly = useCallback((anomaly: Anomaly) => {
     updateCoordinateUrl(anomaly.ra_deg, anomaly.dec_deg);
+    const knownTarget = celestialCatalog.find((target) => target.id === anomaly.target_id);
+    setSelectedObject(knownTarget ?? {
+      id: `anomaly-${anomaly.target_id}`,
+      name: anomaly.target_name,
+      category: "Differential screening candidate",
+      aliases: [anomaly.target_id],
+      raDeg: anomaly.ra_deg,
+      decDeg: anomaly.dec_deg,
+      summary: anomaly.narrative,
+      source: "Chronospectra epoch comparison",
+    });
+    setInitialTarget({ raDeg: anomaly.ra_deg, decDeg: anomaly.dec_deg });
     void showSpectrum(anomaly.ra_deg, anomaly.dec_deg);
   }, [showSpectrum, updateCoordinateUrl]);
 
+  const viewSelectedSpectrum = useCallback(() => {
+    if (selectedObject) void showSpectrum(selectedObject.raDeg, selectedObject.decDeg);
+  }, [selectedObject, showSpectrum]);
+
+  const saveTarget = useCallback(async (target: CelestialTarget) => {
+    setObjectActionStatus("Saving observation…");
+    try {
+      const saved = await createObservation({
+        ra_deg: target.raDeg,
+        dec_deg: target.decDeg,
+        target_name: target.name,
+        source: "sky-view",
+      });
+      setObservations((current) => [saved, ...current]);
+      setObjectActionStatus("Saved to My Observations.");
+    } catch (error) {
+      setObjectActionStatus(error instanceof Error ? error.message : "Could not save this observation.");
+    }
+  }, []);
+
+  const saveSelectedObject = useCallback(async () => {
+    if (!selectedObject) return;
+    if (!user) {
+      pendingSave.current = selectedObject;
+      setAuthOpen(true);
+      setObjectActionStatus("Sign in to save this target to your private observations.");
+      return;
+    }
+    await saveTarget(selectedObject);
+  }, [saveTarget, selectedObject, user]);
+
+  const openObservation = useCallback((observation: Observation) => {
+    const knownTarget = celestialCatalog.find(
+      (target) => Math.abs(target.raDeg - observation.ra_deg) < 0.01 &&
+        Math.abs(target.decDeg - observation.dec_deg) < 0.01,
+    );
+    selectTarget(knownTarget ?? {
+      id: `observation-${observation.id}`,
+      name: observation.target_name,
+      category: "Saved observation",
+      aliases: [],
+      raDeg: observation.ra_deg,
+      decDeg: observation.dec_deg,
+      summary: observation.notes || "A target saved in your private observation logbook.",
+      source: "My Observations",
+    });
+  }, [selectTarget]);
+
+  const handleFullscreen = useCallback(() => {
+    const action = document.fullscreenElement
+      ? document.exitFullscreen()
+      : document.documentElement.requestFullscreen();
+    void action.catch((error: unknown) => {
+      setObjectActionStatus(error instanceof Error ? `Fullscreen unavailable: ${error.message}` : "Fullscreen unavailable.");
+    });
+  }, []);
+
+  const searchResults = useMemo(
+    () => searchCelestialTargets(searchText),
+    [searchText],
+  );
+
   return (
-    <main className="observatory">
+    <main className="observatory" data-night-mode={nightMode}>
       <header className="topbar">
         <Link className="brand" href="/" aria-label="Chronospectra home">
           <span className="brand-mark">C</span>
           <span>CHRONO<span className="brand-accent">SPECTRA</span></span>
         </Link>
-        <div className="mission-label">
-          <span className="live-indicator" />
-          SPHEREx · 102-BAND NEAR-INFRARED SURVEY
-        </div>
+        <form
+          className="sky-search"
+          role="search"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (searchResults[0]) selectTarget(searchResults[0]);
+          }}
+        >
+          <label className="sr-only" htmlFor="celestial-search">Search celestial objects</label>
+          <span aria-hidden="true"><Search size={16} /></span>
+          <input
+            id="celestial-search"
+            value={searchText}
+            onFocus={() => setSearchOpen(true)}
+            onChange={(event) => {
+              setSearchText(event.target.value);
+              setSearchOpen(true);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") setSearchOpen(false);
+            }}
+            placeholder="Search stars, planets, and challenge targets…"
+            autoComplete="off"
+          />
+          {searchOpen && searchText.trim() && (
+            <div className="search-results" role="listbox" aria-label="Celestial search results">
+              {searchResults.map((target) => (
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected="false"
+                  key={target.id}
+                  onClick={() => selectTarget(target)}
+                >
+                  <span className="search-result-symbol" aria-hidden="true"><Sparkles size={16} /></span>
+                  <span><strong>{target.name}</strong><small>{target.category} · {target.aliases[0] ?? "ICRS catalog target"}</small></span>
+                </button>
+              ))}
+              {anomalies
+                .filter((anomaly) => anomaly.target_name.toLowerCase().includes(searchText.trim().toLowerCase()))
+                .slice(0, 4)
+                .map((anomaly) => (
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected="false"
+                    key={`anomaly-${anomaly.target_id}`}
+                    onClick={() => {
+                      setSearchOpen(false);
+                      setSearchText("");
+                      selectAnomaly(anomaly);
+                    }}
+                  >
+                    <span className="search-result-symbol anomaly-symbol" aria-hidden="true">◉</span>
+                    <span><strong>{anomaly.target_name}</strong><small>Anomaly candidate · {Math.abs(anomaly.significance).toFixed(1)}σ</small></span>
+                  </button>
+                ))}
+              {searchResults.length === 0 && !anomalies.some((anomaly) => anomaly.target_name.toLowerCase().includes(searchText.trim().toLowerCase())) && (
+                <p className="search-no-results">No matching catalog entry. Search the listed stars and SPHEREx targets.</p>
+              )}
+            </div>
+          )}
+        </form>
         <a
           className="archive-link"
           href={hipsUrl}
@@ -170,7 +427,45 @@ export default function ObservatoryPage() {
         >
           SPHEREx HiPS ↗
         </a>
+        <button type="button" className="account-button" onClick={() => setAuthOpen(true)}>
+          {user ? user.full_name.split(" ")[0] : "Sign in"}
+        </button>
       </header>
+
+      <ObservationSidebar
+        user={user}
+        observations={observations}
+        open={sidebarOpen}
+        loading={observationsLoading}
+        error={observationsError}
+        onToggle={() => setSidebarOpen((open) => !open)}
+        onSignIn={() => setAuthOpen(true)}
+        onSignOut={() => {
+          void signOut()
+            .then(() => setUser(null))
+            .catch((error: unknown) => setSidebarError(error instanceof Error ? error.message : "Could not sign out."));
+        }}
+        onDeleteAccount={() => {
+          void deleteAccount()
+            .then(() => {
+              setUser(null);
+              setObservations([]);
+              setObjectActionStatus("Account and saved observations deleted.");
+            })
+            .catch((error: unknown) => setSidebarError(error instanceof Error ? error.message : "Could not delete the account."));
+        }}
+        onOpenObservation={openObservation}
+        onDeleteObservation={(id) => {
+          void deleteObservation(id)
+            .then(() => setObservations((items) => items.filter((item) => item.id !== id)))
+            .catch((error: unknown) => setSidebarError(error instanceof Error ? error.message : "Could not remove observation."));
+        }}
+        onUpdateNotes={(id, notes) => {
+          void updateObservationNotes(id, notes)
+            .then((updated) => setObservations((items) => items.map((item) => item.id === id ? updated : item)))
+            .catch((error: unknown) => setSidebarError(error instanceof Error ? error.message : "Could not update observation."));
+        }}
+      />
 
       <div className="workspace">
         <section className="sky-section">
@@ -185,9 +480,26 @@ export default function ObservatoryPage() {
             anomalies={anomalies}
             hipsBaseUrl={hipsUrl}
             initialTarget={initialTarget}
+            viewportSettings={viewportSettings}
+            observerLongitude={location?.longitude ?? null}
+            selectedTargetId={selectedObject?.id ?? null}
+            onFieldOfViewChange={setFieldOfView}
             onSkyClick={selectSkyPosition}
             onAnomalySelect={selectAnomaly}
+            onTargetSelect={selectTarget}
           />
+          {selectedObject && (
+            <ObjectDetailPanel
+              target={selectedObject}
+              latitude={location?.latitude ?? null}
+              longitude={location?.longitude ?? null}
+              onClose={() => setSelectedObject(null)}
+              onSave={() => void saveSelectedObject()}
+              onViewSpectrum={viewSelectedSpectrum}
+            />
+          )}
+          {objectActionStatus && <p className="object-action-status" role="status">{objectActionStatus}</p>}
+          {sidebarError && <p className="object-action-status error-message" role="alert">{sidebarError}</p>}
           {loadingSpectrum && <p className="inline-status">Extracting pixel samples from Zarr…</p>}
           {spectrumError && <p className="error-message inline-error">{spectrumError}</p>}
           {dataStatus && !dataStatus.ready && (
@@ -298,6 +610,30 @@ export default function ObservatoryPage() {
           </p>
         </aside>
       </div>
+
+      <ViewportToolbar
+        settings={viewportSettings}
+        onSettingsChange={setViewportSettings}
+        fieldOfView={fieldOfView ? `${fieldOfView < 1 ? fieldOfView.toFixed(2) : fieldOfView.toFixed(1)}°` : "—"}
+        location={location?.label ?? locationStatus}
+        nightMode={nightMode}
+        onNightModeChange={setNightMode}
+        onFullscreen={handleFullscreen}
+      />
+
+      {authOpen && (
+        <AuthDialog
+          onClose={() => setAuthOpen(false)}
+          onAuthenticated={(authenticatedUser) => {
+            setUser(authenticatedUser);
+            setAuthOpen(false);
+            setObjectActionStatus("");
+            const queuedTarget = pendingSave.current;
+            pendingSave.current = null;
+            if (queuedTarget) void saveTarget(queuedTarget);
+          }}
+        />
+      )}
 
       {spectrum && isSedOpen && (
         <SedModal

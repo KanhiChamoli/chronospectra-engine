@@ -8,16 +8,24 @@ import {
 } from "@wwtelescope/engine-types";
 import type {
   Imageset,
+  Settings,
   WWTControl as WWTControlType,
 } from "@wwtelescope/engine";
 import type { Anomaly } from "@/types/spectroscopy";
+import { celestialCatalog, type CelestialTarget } from "@/lib/celestialCatalog";
+import type { ViewportSettings } from "@/types/viewport";
 
 interface WorldWideTelescopeViewProps {
   anomalies: Anomaly[];
   hipsBaseUrl: string;
   initialTarget: { raDeg: number; decDeg: number } | null;
+  viewportSettings: ViewportSettings;
+  observerLongitude: number | null;
+  selectedTargetId: string | null;
+  onFieldOfViewChange: (degrees: number) => void;
   onSkyClick: (raDeg: number, decDeg: number) => void;
   onAnomalySelect: (anomaly: Anomaly) => void;
+  onTargetSelect: (target: CelestialTarget) => void;
 }
 
 interface PinPosition {
@@ -122,14 +130,20 @@ export function WorldWideTelescopeView({
   anomalies,
   hipsBaseUrl,
   initialTarget,
+  viewportSettings,
+  observerLongitude,
+  selectedTargetId,
+  onFieldOfViewChange,
   onSkyClick,
   onAnomalySelect,
+  onTargetSelect,
 }: WorldWideTelescopeViewProps) {
   const generatedId = useId();
   const viewerId = `wwt-view-${generatedId.replace(/[^a-zA-Z0-9_-]/g, "")}`;
   const containerRef = useRef<HTMLDivElement>(null);
   const controlRef = useRef<WWTControlType | null>(null);
   const engineRef = useRef<WWTModule | null>(null);
+  const settingsRef = useRef<Settings | null>(null);
   const overlayRequest = useRef<AbortController | null>(null);
   const overlayImagesets = useRef(new Map<SurveyOverlayId, Imageset>());
   const [status, setStatus] = useState("Starting WWT");
@@ -137,6 +151,10 @@ export function WorldWideTelescopeView({
   const [selectedOverlay, setSelectedOverlay] = useState<SurveyOverlayId>("none");
   const [overlayStatus, setOverlayStatus] = useState("");
   const [pins, setPins] = useState<PinPosition[]>([]);
+  const [targetLabels, setTargetLabels] = useState<Array<{ target: CelestialTarget; left: number; top: number }>>([]);
+  const [meridianPath, setMeridianPath] = useState("");
+  const [overlaySize, setOverlaySize] = useState({ width: 0, height: 0 });
+  const lastFov = useRef("");
   const pointerStart = useRef<{ x: number; y: number } | null>(null);
 
   const flyTo = useCallback((raDeg: number, decDeg: number) => {
@@ -178,6 +196,9 @@ export function WorldWideTelescopeView({
           scriptInterface.add_ready(() => {
             if (disposed) return;
             controlRef.current = control;
+            settingsRef.current = scriptInterface.settings;
+            scriptInterface.settings.set_showSolarSystem(true);
+            scriptInterface.settings.set_solarSystemPlanets(true);
             setIsReady(true);
             try {
               const existing = control.getImagesetByName(hipsImageSetName);
@@ -227,6 +248,23 @@ export function WorldWideTelescopeView({
       }
     };
   }, [hipsBaseUrl, viewerId]);
+
+  useEffect(() => {
+    const settings = settingsRef.current;
+    if (!isReady || !settings) return;
+    settings.set_showGrid(viewportSettings.equatorialGrid);
+    settings.set_showEquatorialGridText(viewportSettings.equatorialGrid);
+    settings.set_showAltAzGrid(viewportSettings.azimuthalGrid);
+    settings.set_showAltAzGridText(viewportSettings.azimuthalGrid);
+    settings.set_showEarthSky(viewportSettings.atmosphere);
+    settings.set_showConstellationPictures(viewportSettings.constellationArt);
+    settings.set_showConstellationFigures(viewportSettings.constellationLines);
+    settings.set_showConstellationBoundries(viewportSettings.constellationLines);
+    settings.set_showConstellationLabels(viewportSettings.constellationLabels);
+    settings.set_constellationFigureColor("rgba(0, 240, 255, 0.72)");
+    settings.set_constellationBoundryColor("rgba(0, 240, 255, 0.42)");
+    settings.set_showEcliptic(viewportSettings.eclipticLine);
+  }, [isReady, viewportSettings]);
 
   useEffect(() => {
     if (isReady && initialTarget) {
@@ -298,6 +336,13 @@ export function WorldWideTelescopeView({
 
       const rect = canvas.getBoundingClientRect();
       if (!rect.width || !rect.height || !canvas.width || !canvas.height) return;
+      setOverlaySize({ width: rect.width, height: rect.height });
+      const fov = control.renderContext.get_fovAngle();
+      const formattedFov = `${fov < 1 ? fov.toFixed(2) : fov.toFixed(1)}°`;
+      if (formattedFov !== lastFov.current) {
+        lastFov.current = formattedFov;
+        onFieldOfViewChange(fov);
+      }
       const nextPins = anomalies.flatMap((anomaly) => {
         const screenPoint = control.getScreenPointForCoordinates(
           anomaly.ra_deg / 15,
@@ -322,12 +367,48 @@ export function WorldWideTelescopeView({
         ];
       });
       setPins(nextPins);
+      const nextLabels = celestialCatalog
+        .filter((target) => target.id !== "sun")
+        .map((target) => {
+          const point = control.getScreenPointForCoordinates(target.raDeg / 15, target.decDeg);
+          if (
+            !Number.isFinite(point.x) ||
+            !Number.isFinite(point.y) ||
+            point.x < 0 ||
+            point.y < 0 ||
+            point.x > canvas.width ||
+            point.y > canvas.height
+          ) return null;
+          return {
+            target,
+            left: (point.x / canvas.width) * rect.width,
+            top: (point.y / canvas.height) * rect.height,
+          };
+        })
+        .filter((label): label is { target: CelestialTarget; left: number; top: number } => label !== null);
+      setTargetLabels(nextLabels);
+      if (viewportSettings.meridianLine && observerLongitude !== null) {
+        const julianDate = Date.now() / 86_400_000 + 2_440_587.5;
+        const days = julianDate - 2_451_545;
+        const gmst = 280.46061837 + 360.98564736629 * days;
+        const rightAscension = ((gmst + observerLongitude) % 360 + 360) % 360 / 15;
+        const points = [];
+        for (let dec = -80; dec <= 80; dec += 5) {
+          const point = control.getScreenPointForCoordinates(rightAscension, dec);
+          if (Number.isFinite(point.x) && Number.isFinite(point.y)) {
+            points.push(`${(point.x / canvas.width) * rect.width},${(point.y / canvas.height) * rect.height}`);
+          }
+        }
+        setMeridianPath(points.length > 1 ? `M ${points.join(" L ")}` : "");
+      } else {
+        setMeridianPath("");
+      }
     }, 250);
 
     return () => {
       window.clearInterval(updateTimer);
     };
-  }, [anomalies, viewerId]);
+  }, [anomalies, observerLongitude, onFieldOfViewChange, viewportSettings.meridianLine, viewerId]);
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     pointerStart.current = { x: event.clientX, y: event.clientY };
@@ -371,6 +452,15 @@ export function WorldWideTelescopeView({
       aria-label="Interactive WorldWide Telescope sky map"
     >
       <div id={viewerId} ref={containerRef} className="wwt-canvas" />
+      {overlaySize.width > 0 && (
+        <svg
+          className="sky-guide-overlay"
+          viewBox={`0 0 ${overlaySize.width} ${overlaySize.height}`}
+          aria-hidden="true"
+        >
+          {meridianPath && <path className="meridian-guide" d={meridianPath} />}
+        </svg>
+      )}
       <div className="map-status" role="status">{status}</div>
       <label className="survey-overlay-control" data-map-control>
         <span>EXTERNAL SURVEY</span>
@@ -391,6 +481,21 @@ export function WorldWideTelescopeView({
         </select>
         <small aria-live="polite">{overlayStatus}</small>
       </label>
+      {targetLabels.map(({ target, left, top }) => (
+        <button
+          className={`sky-object-label${selectedTargetId === target.id ? " selected" : ""}`}
+          key={target.id}
+          type="button"
+          data-map-control
+          style={{ left, top }}
+          onPointerDown={(event) => event.stopPropagation()}
+          onPointerUp={(event) => event.stopPropagation()}
+          onClick={() => onTargetSelect(target)}
+          aria-label={`Open ${target.name} details`}
+        >
+          {target.name}
+        </button>
+      ))}
       {pins.map(({ anomaly, left, top }) => (
         <button
           key={`${anomaly.target_id}-${anomaly.epoch_a}-${anomaly.epoch_b}`}

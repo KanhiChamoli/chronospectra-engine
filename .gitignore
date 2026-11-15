@@ -11,3 +11,6 @@ frontend/out/
 frontend/*.tsbuildinfo
 backend/data/raw/
 backend/data/processed/
+backend/data/chronospectra.sqlite3
+backend/data/chronospectra.sqlite3-shm
+backend/data/chronospectra.sqlite3-wal
