@@ -6,6 +6,11 @@ Notable Chronospectra changes are documented here. Dates use ISO 8601.
 
 ### Added
 
+- Replaced the demo-only warning panel with a clearly labeled synthetic demo
+  status (the local API currently reports 1,020 synthetic products, not a
+  verified QR3 release) and direct links to the challenge-listed IRSA archive,
+  SPHEREx notebooks, WiseView, Gaia DR3, and the complete NASA Space Apps
+  resources.
 - Monthly GitHub Actions polling for SPHEREx QR3 products, with a manual
   dispatch option and upload of processed products to a configured Cloudflare
   R2 bucket.

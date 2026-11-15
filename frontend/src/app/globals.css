@@ -672,12 +672,30 @@ h2 {
 }
 
 .data-readiness.demo-data {
-  border-color: rgb(255 100 124 / 48%);
-  background: rgb(255 100 124 / 7%);
+  border-color: rgb(255 183 3 / 38%);
+  background: rgb(255 183 3 / 6%);
 }
 
 .data-readiness.demo-data strong {
-  color: #ff8798;
+  color: var(--amber);
+}
+
+.challenge-resource-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 14px;
+  margin-top: 2px;
+}
+
+.challenge-resource-links a {
+  color: var(--cyan);
+  text-decoration: none;
+}
+
+.challenge-resource-links a:hover,
+.challenge-resource-links a:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .data-readiness code {

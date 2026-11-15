@@ -419,6 +419,8 @@ python -m unittest discover -s backend\tests -v
 - [Challenge resources](https://www.spaceappschallenge.org/2026/challenges/planet-x-and-spherex/?tab=resources)
 - [IRSA SPHEREx Archive](https://irsa.ipac.caltech.edu/Missions/spherex.html)
 - [SPHEREx tutorial notebooks](https://caltech-ipac.github.io/irsa-tutorials/spherex/)
+- [WiseView](http://byw.tools/wiseview) — WISE time-domain visualization inspiration, as listed by the challenge.
+- [Gaia mission data (DR3)](https://archive.stsci.edu/missions-and-data/gaia) — use the latest release, as recommended by the challenge.
 - [SPHEREx data products](https://caltech-ipac.github.io/spherex-archive-documentation/spherex-data-products/)
 - [WorldWide Telescope WebGL engine](https://github.com/WorldWideTelescope/wwt-webgl-engine)
 

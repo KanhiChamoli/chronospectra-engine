@@ -203,12 +203,51 @@ export default function ObservatoryPage() {
           )}
           {dataStatus && dataStatus.synthetic_product_count > 0 && (
             <div className="data-readiness demo-data" role="status">
-              <strong>SYNTHETIC DEMO PRODUCTS — NOT NASA OBSERVATIONS</strong>
+              <strong>
+                DEMO MODE · {dataStatus.synthetic_product_count.toLocaleString()} SYNTHETIC PRODUCTS
+              </strong>
               <span>
-                {dataStatus.synthetic_product_count} demo products are available for
-                exercising spectra and anomaly comparisons. Replace them with verified
-                QR3 products before scientific use.
+                These generated samples exercise the interface; they are not NASA/SPHEREx
+                observations and are not scientific evidence. Explore the challenge&apos;s
+                recommended data and inspiration:
               </span>
+              <nav className="challenge-resource-links" aria-label="NASA Space Apps challenge resources">
+                <a
+                  href="https://irsa.ipac.caltech.edu/Missions/spherex.html"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  IRSA SPHEREx archive
+                </a>
+                <a
+                  href="https://caltech-ipac.github.io/irsa-tutorials/spherex/"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  SPHEREx Python notebooks
+                </a>
+                <a
+                  href="http://byw.tools/wiseview"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  WiseView inspiration
+                </a>
+                <a
+                  href="https://archive.stsci.edu/missions-and-data/gaia"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Gaia mission data · DR3
+                </a>
+                <a
+                  href="https://www.spaceappschallenge.org/2026/challenges/planet-x-and-spherex/?tab=resources"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  All challenge resources ↗
+                </a>
+              </nav>
             </div>
           )}
           {dataStatusError && (
