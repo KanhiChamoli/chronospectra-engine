@@ -19,7 +19,7 @@ export default function PitchDeckPage() {
         <div className="pitch-orbit" aria-hidden="true"><span /></div>
         <h1>Chronospectra</h1>
         <p className="pitch-subtitle">A time × wavelength observatory for a changing sky</p>
-        <p className="pitch-slide-number">01 / 06</p>
+        <p className="pitch-slide-number">01 / 07</p>
         <footer>{slideFooter}</footer>
       </article>
 
@@ -36,7 +36,7 @@ export default function PitchDeckPage() {
           <div><strong>WAVELENGTH</strong><span>Inspect measured channels from 0.75–5 μm</span></div>
           <div><strong>SKY</strong><span>Navigate targets in an interactive WWT viewport</span></div>
         </div>
-        <p className="pitch-slide-number">02 / 06</p>
+        <p className="pitch-slide-number">02 / 07</p>
         <footer>{slideFooter}</footer>
       </article>
 
@@ -61,7 +61,7 @@ export default function PitchDeckPage() {
           Select a measured cell to inspect a wavelength; compare Epoch A and B
           in the spectrum view.
         </p>
-        <p className="pitch-slide-number">03 / 06</p>
+        <p className="pitch-slide-number">03 / 07</p>
         <footer>{slideFooter}</footer>
       </article>
 
@@ -80,7 +80,7 @@ export default function PitchDeckPage() {
             <p>Candidate scores are screening aids, not confirmed discoveries or causal explanations.</p>
           </section>
         </div>
-        <p className="pitch-slide-number">04 / 06</p>
+        <p className="pitch-slide-number">04 / 07</p>
         <footer>{slideFooter}</footer>
       </article>
 
@@ -102,7 +102,7 @@ export default function PitchDeckPage() {
           data transferred within Cloudflare has no egress fee, while storage,
           request, compute, and delivery costs still apply.
         </p>
-        <p className="pitch-slide-number">05 / 06</p>
+        <p className="pitch-slide-number">05 / 07</p>
         <footer>{slideFooter}</footer>
       </article>
 
@@ -121,7 +121,37 @@ export default function PitchDeckPage() {
           <a href="https://www.spaceappschallenge.org/2026/challenges/planet-x-and-spherex/?tab=resources" target="_blank" rel="noreferrer">Challenge resources ↗</a>
           <Link href="/credits">Software and data credits</Link>
         </nav>
-        <p className="pitch-slide-number">06 / 06</p>
+        <p className="pitch-slide-number">06 / 07</p>
+        <footer>{slideFooter}</footer>
+      </article>
+
+      <article className="pitch-slide">
+        <p className="eyebrow">A 60-SECOND DEMO</p>
+        <h2>Start with a question. Leave with a lead to investigate.</h2>
+        <div className="pitch-facts">
+          <div>
+            <strong>01 · FIND</strong>
+            <span>Search a challenge target or open a shared RA/Dec link to fly to a point in the sky.</span>
+          </div>
+          <div>
+            <strong>02 · COMPARE</strong>
+            <span>Inspect available epochs and measured wavelengths; open a pixel spectrum where coverage exists.</span>
+          </div>
+          <div>
+            <strong>03 · FOLLOW UP</strong>
+            <span>Review anomaly candidates, their variance-based scores, and the supporting epoch comparison.</span>
+          </div>
+        </div>
+        <p className="pitch-lead">
+          Today’s hosted demo uses synthetic products—not SPHEREx observations.
+          The goal is a release-ready workflow that can be validated against
+          verified QR3 products when archive access and coverage are available.
+        </p>
+        <nav className="pitch-resources" aria-label="Demo deck links">
+          <Link href="/">Open the live observatory ↗</Link>
+          <Link href="/credits">Review data and software credits</Link>
+        </nav>
+        <p className="pitch-slide-number">07 / 07</p>
         <footer>{slideFooter}</footer>
       </article>
     </main>

@@ -5,7 +5,9 @@ from __future__ import annotations
 import math
 import os
 import logging
+import threading
 import time
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -30,17 +32,52 @@ def _zarr_root() -> Path:
 
 
 def _open_complete_groups(root: Path) -> list[zarr.hierarchy.Group]:
-    if not root.is_dir():
-        return []
-    groups: list[zarr.hierarchy.Group] = []
-    for metadata_path in root.rglob(".zgroup"):
-        try:
-            group = zarr.open_group(str(metadata_path.parent), mode="r")
-        except (OSError, zarr.errors.PathNotFoundError, zarr.errors.GroupNotFoundError):
-            continue
-        if group.attrs.get("complete") is True:
-            groups.append(group)
-    return groups
+    root_key = root.resolve()
+    now = time.monotonic()
+    with _PRODUCT_SCAN_CACHE_LOCK:
+        cached = _PRODUCT_GROUPS_CACHE.get(root_key)
+        if cached is not None and now - cached[0] < PRODUCT_CACHE_TTL_SECONDS:
+            return cached[1]
+
+        if not root_key.is_dir():
+            groups: list[zarr.hierarchy.Group] = []
+        else:
+            groups = []
+            for metadata_path in root_key.rglob(".zgroup"):
+                try:
+                    group = zarr.open_group(str(metadata_path.parent), mode="r")
+                except (
+                    OSError,
+                    zarr.errors.PathNotFoundError,
+                    zarr.errors.GroupNotFoundError,
+                ):
+                    continue
+                if group.attrs.get("complete") is True:
+                    groups.append(group)
+
+        expired = [
+            key
+            for key, (created_at, _) in _PRODUCT_GROUPS_CACHE.items()
+            if now - created_at >= PRODUCT_CACHE_TTL_SECONDS
+        ]
+        for key in expired:
+            _, stale_groups = _PRODUCT_GROUPS_CACHE.pop(key)
+            _discard_group_arrays(stale_groups)
+        if len(_PRODUCT_GROUPS_CACHE) >= MAX_PRODUCT_SCAN_CACHE_ENTRIES:
+            oldest = min(
+                _PRODUCT_GROUPS_CACHE,
+                key=lambda key: _PRODUCT_GROUPS_CACHE[key][0],
+            )
+            _, stale_groups = _PRODUCT_GROUPS_CACHE.pop(oldest)
+            _discard_group_arrays(stale_groups)
+        _PRODUCT_GROUPS_CACHE[root_key] = (time.monotonic(), groups)
+        return groups
+
+
+@lru_cache(maxsize=2048)
+def _celestial_wcs(header_text: str) -> WCS:
+    header = fits.Header.fromstring(header_text, sep="\n")
+    return WCS(header).celestial
 
 
 def _pixel_for_coordinate(
@@ -52,19 +89,18 @@ def _pixel_for_coordinate(
     header_text = group.attrs.get("spatial_wcs_header")
     if not isinstance(header_text, str):
         return None
-    header = fits.Header.fromstring(header_text, sep="\n")
-    wcs = WCS(header).celestial
+    wcs = _celestial_wcs(header_text)
     x_pixel, y_pixel = wcs.world_to_pixel_values(ra_deg, dec_deg)
     if not np.isfinite(x_pixel) or not np.isfinite(y_pixel):
         return None
     column = math.floor(float(x_pixel) + 0.5)
     row = math.floor(float(y_pixel) + 0.5)
-    flux = group["flux_mjy_sr"]
+    flux = _product_array(group, "flux_mjy_sr")
     if row < 0 or column < 0 or row >= flux.shape[0] or column >= flux.shape[1]:
         return None
 
-    pixel_ra = float(group["ra_deg"][row, column])
-    pixel_dec = float(group["dec_deg"][row, column])
+    pixel_ra = float(_product_array(group, "ra_deg")[row, column])
+    pixel_dec = float(_product_array(group, "dec_deg")[row, column])
     requested = SkyCoord(ra=ra_deg, dec=dec_deg, unit="deg")
     sampled = SkyCoord(ra=pixel_ra, dec=pixel_dec, unit="deg")
     if requested.separation(sampled).arcsec > radius_arcsec:
@@ -82,11 +118,11 @@ def _sample_from_group(
     if pixel is None:
         return None
     row, column = pixel
-    flux = float(group["flux_mjy_sr"][row, column])
-    variance = float(group["variance_mjy_sr2"][row, column])
-    wavelength = float(group["wavelength_um"][row, column])
-    bandwidth = float(group["bandwidth_um"][row, column])
-    flags = int(group["flags"][row, column])
+    flux = float(_product_array(group, "flux_mjy_sr")[row, column])
+    variance = float(_product_array(group, "variance_mjy_sr2")[row, column])
+    wavelength = float(_product_array(group, "wavelength_um")[row, column])
+    bandwidth = float(_product_array(group, "bandwidth_um")[row, column])
+    flags = int(_product_array(group, "flags")[row, column])
     if (
         not all(math.isfinite(value) for value in (flux, variance, wavelength))
         or variance <= 0.0
@@ -268,17 +304,60 @@ def tell_cosmic_story(
     )
 
 
-def _cache_key(min_significance: float, epoch_a: str | None, epoch_b: str | None) -> tuple[float, str, str]:
-    """Stable cache key so callers get hits regardless of None-vs-empty epoch args."""
-    return (min_significance, epoch_a or "", epoch_b or "")
+PRODUCT_CACHE_TTL_SECONDS = 60.0
+MAX_PRODUCT_SCAN_CACHE_ENTRIES = 8
+_PRODUCT_GROUPS_CACHE: dict[Path, tuple[float, list[zarr.hierarchy.Group]]] = {}
+_PRODUCT_ARRAY_CACHE: dict[
+    int, tuple[zarr.hierarchy.Group, dict[str, zarr.core.Array]]
+] = {}
+_PRODUCT_SCAN_CACHE: dict[
+    Path,
+    tuple[float, dict[str, tuple[dict[str, Any], dict[str, list[dict[str, Any]]]]]],
+] = {}
+_PRODUCT_SCAN_CACHE_LOCK = threading.RLock()
 
 
-_ANOMALY_CACHE: dict[tuple[float, str, str], tuple[float, dict[str, Any]]] = {}
-ANOMALY_CACHE_TTL_SECONDS = 3600.0
+def _discard_group_arrays(groups: list[zarr.hierarchy.Group]) -> None:
+    for group in groups:
+        _PRODUCT_ARRAY_CACHE.pop(id(group), None)
 
 
-_PRODUCT_PAIR_CACHE: dict[tuple[str, str], tuple[float, tuple[dict, dict]]] = {}
-ANOMALY_CACHE_TTL_SECONDS = 3600.0
+def _product_array(group: zarr.hierarchy.Group, name: str) -> zarr.core.Array:
+    with _PRODUCT_SCAN_CACHE_LOCK:
+        cached = _PRODUCT_ARRAY_CACHE.get(id(group))
+        if cached is None or cached[0] is not group:
+            cached = (group, {})
+            _PRODUCT_ARRAY_CACHE[id(group)] = cached
+        arrays = cached[1]
+        if name not in arrays:
+            arrays[name] = group[name]
+        return arrays[name]
+
+
+def _cached_product_scan(
+    root: Path,
+) -> dict[str, tuple[dict[str, Any], dict[str, list[dict[str, Any]]]]]:
+    root_key = root.resolve()
+    now = time.monotonic()
+    with _PRODUCT_SCAN_CACHE_LOCK:
+        cached = _PRODUCT_SCAN_CACHE.get(root_key)
+        if cached is not None and now - cached[0] < PRODUCT_CACHE_TTL_SECONDS:
+            return cached[1]
+
+        expired = [
+            key
+            for key, (created_at, _) in _PRODUCT_SCAN_CACHE.items()
+            if now - created_at >= PRODUCT_CACHE_TTL_SECONDS
+        ]
+        for key in expired:
+            _PRODUCT_SCAN_CACHE.pop(key, None)
+
+        products = _scan_all_products(root_key)
+        if len(_PRODUCT_SCAN_CACHE) >= MAX_PRODUCT_SCAN_CACHE_ENTRIES:
+            oldest = min(_PRODUCT_SCAN_CACHE, key=lambda key: _PRODUCT_SCAN_CACHE[key][0])
+            _PRODUCT_SCAN_CACHE.pop(oldest, None)
+        _PRODUCT_SCAN_CACHE[root_key] = (time.monotonic(), products)
+        return products
 
 
 def find_anomalies(
@@ -297,19 +376,10 @@ def find_anomalies(
     if not math.isfinite(min_significance) or min_significance <= 0.0:
         raise ValueError("min_significance must be a positive finite number")
 
-    # Per-product sampling is identical across min_significance values (the
-    # threshold is applied after pairing), so the full product scan is cached
-    # by epoch pair only, making repeat scans nearly instant.
-    pairs_key = (epoch_a or "", epoch_b or "")
-    now = time.monotonic()
-    cached = _PRODUCT_PAIR_CACHE.get(pairs_key)
-    if cached is not None and now - cached[0] < ANOMALY_CACHE_TTL_SECONDS:
-        per_target, epochs_by_target = cached[1]
-    else:
-        per_target, epochs_by_target = _scan_all_products(
-            zarr_root or _zarr_root(), epoch_a, epoch_b
-        )
-        _PRODUCT_PAIR_CACHE[pairs_key] = (now, (per_target, epochs_by_target))
+    # Sampling is independent of the requested threshold and epoch pair.
+    # Keep only a short-lived, root-specific scan so new ingested groups appear
+    # promptly and tests or deployments with different roots cannot leak data.
+    per_target = _cached_product_scan(zarr_root or _zarr_root())
 
     anomalies: list[dict[str, Any]] = []
     for target_id, (target, epochs) in per_target.items():
@@ -358,9 +428,7 @@ def find_anomalies(
 
 def _scan_all_products(
     root: Path,
-    epoch_a: str | None,
-    epoch_b: str | None,
-) -> tuple[dict[str, tuple[dict[str, Any], dict[str, list[dict[str, Any]]]]], dict[str, list[str]]]:
+) -> dict[str, tuple[dict[str, Any], dict[str, list[dict[str, Any]]]]]:
     """Sample the target pixel of every complete product, grouped per target."""
     per_target: dict[str, tuple[dict[str, Any], dict[str, list[dict[str, Any]]]]] = {}
     for group in _open_complete_groups(root):
@@ -397,4 +465,4 @@ def _scan_all_products(
             continue
         if sample is not None:
             epochs.setdefault(epoch, []).append(sample)
-    return per_target, {tid: sorted(t[1]) for tid, t in per_target.items()}
+    return per_target

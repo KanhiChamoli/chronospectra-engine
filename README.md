@@ -156,8 +156,11 @@ For local development, set `CHRONOSPECTRA_COOKIE_SECURE=false` and
 `CHRONOSPECTRA_COOKIE_SAMESITE=strict`. In production use HTTPS and set
 `CHRONOSPECTRA_COOKIE_SECURE=true`. If the frontend and API are on different
 sites, use `CHRONOSPECTRA_COOKIE_SAMESITE=none`, HTTPS, and an exact
-`CHRONOSPECTRA_CORS_ORIGINS` allowlist. Add API rate limiting at the hosting
-gateway before opening account endpoints to the public internet.
+`CHRONOSPECTRA_CORS_ORIGINS` allowlist. The current signup flow has no CAPTCHA
+or email verification; signup and observation routes also lack request-rate
+limits. Login has a failed-password lockout, but that is not a substitute for
+abuse protection. Do not accept real personal data until these controls and
+durable storage are in place, or disable public signup.
 
 If the page reports that it cannot reach the API, verify `http://localhost:8000/health`
 and keep the FastAPI process running in its own terminal. For a deployed frontend,
@@ -189,8 +192,9 @@ The map's **External survey** menu can layer the IRSA-hosted AllWISE RGB or
 spectral data.
 
 The account dialog collects name, email, date of birth, a 12-character-minimum
-password, and required terms/privacy consent. Accounts are usable immediately
-after registration. The left logbook saves targets and notes to
+password, and required terms/privacy consent. The API currently marks accounts
+verified at registration, without sending a verification email. The left
+logbook saves targets and notes to
 the authenticated API; the API scopes every read/update/delete by account.
 The map uses browser geolocation only after the browser's permission prompt,
 and displays coordinates without sending them to a reverse-geocoding provider.
@@ -352,19 +356,19 @@ volume; Vercel does not host this local filesystem API as configured.
 
 ### Render FastAPI backend
 
-The root `render.yaml` is a Render Blueprint for a single-instance Docker
-service. It builds `backend/Dockerfile`, checks `/health`, and mounts a 10 GB
-persistent disk at `/var/data`. The image builds the explicitly synthetic demo
-Zarr products separately; at first startup, they are copied onto an empty
-persistent Zarr directory so the demo's SED and anomaly features work without
-claiming to have NASA data. Existing non-empty Zarr storage is never
-overwritten by this seed operation. Back up the disk and plan an explicit
-verified-data migration before replacing demo products. The API-only
-requirements omit the PyTorch,
-IRSA-query, and HEALPix packages that are needed for model development and
-ingestion but not for serving spectra; this reduces deployment build time and
-image size. The monthly ingestion workflow continues to use the full
-`backend/requirements.txt`.
+The root `render.yaml` is a **free-tier, single-instance** Render Blueprint.
+It builds `backend/Dockerfile`, checks `/health`, and stores the SQLite database
+and Zarr products under `/tmp`. Render's free filesystem is ephemeral: data
+can be lost after a restart, redeploy, or instance replacement. This setup is
+for a disposable demo, not durable accounts or science products. For persistence,
+use a paid mounted disk or managed database plus durable object storage, then
+configure the paths accordingly. The image builds explicitly synthetic demo
+Zarr products separately and copies them into an empty data directory at startup;
+they are not NASA observations. Existing non-empty Zarr storage is not
+overwritten by that seed operation. The API-only requirements omit PyTorch,
+IRSA-query, and HEALPix packages needed for development/ingestion but not for
+serving spectra, reducing deployment build time and image size. The monthly
+ingestion workflow continues to use the full `backend/requirements.txt`.
 
 Create the Render Blueprint from the repository root and fill its `sync: false`
 environment variables in the Render dashboard:
@@ -374,10 +378,12 @@ environment variables in the Render dashboard:
 | `CHRONOSPECTRA_CORS_ORIGINS` | Exact browser origin(s), e.g. `https://chronospectra.example.org`; comma-separated only if needed. No wildcard. |
 | `CHRONOSPECTRA_PII_ENCRYPTION_KEY` | A new Fernet key generated with the command below. Back it up securely; do not rotate without migrating encrypted data. |
 
-The Blueprint sets `CHRONOSPECTRA_AUTH_DB=/var/data/chronospectra.sqlite3`,
-`CHRONOSPECTRA_ZARR_ROOT=/var/data/processed/zarr` and TLS-secure cookies. It binds to Render's `$PORT` (falling back to 8000
-for local Docker). Keep this deployment to one API instance while using SQLite
-and its attached disk. The attached volume is not shared across replicas.
+The Blueprint sets `CHRONOSPECTRA_AUTH_DB=/tmp/chronospectra.sqlite3`,
+`CHRONOSPECTRA_ZARR_ROOT=/tmp/chronospectra-zarr` and TLS-secure cookies. It
+binds to Render's `$PORT` (falling back to 8000 for local Docker). Keep this
+deployment to one API instance while using SQLite. The in-memory Zarr
+group/array and anomaly-scan caches expire after 60 seconds; new Zarr products
+become visible after cache expiry.
 
 For Vercel and Render's default `*.vercel.app` and `*.onrender.com` domains,
 the Blueprint uses `SameSite=None; Secure`; some browsers restrict cross-site
@@ -410,7 +416,8 @@ have a specific, audited public-serving use case.
 
 The deployment files configure infrastructure only; they do not create
 provider accounts, DNS records, credentials, or live deployments. Review
-Vercel environment scope and Render disk persistence before accepting registrations.
+Vercel environment scope and the Render filesystem's ephemeral behavior before
+accepting registrations.
 
 ### Recommended hosting layout
 

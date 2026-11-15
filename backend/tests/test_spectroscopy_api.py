@@ -10,9 +10,9 @@ from fastapi.testclient import TestClient
 
 from backend.main import app
 from backend.src.spectroscopy import (
-    ANOMALY_CACHE_TTL_SECONDS,
     NoSpectralDataError,
-    _PRODUCT_PAIR_CACHE,
+    _PRODUCT_GROUPS_CACHE,
+    _PRODUCT_SCAN_CACHE,
     extract_spectrum,
     find_anomalies,
     get_data_status,
@@ -109,9 +109,8 @@ class SpectroscopyTests(unittest.TestCase):
         )
         self.previous_root = os.environ.get("CHRONOSPECTRA_ZARR_ROOT")
         os.environ["CHRONOSPECTRA_ZARR_ROOT"] = str(self.root)
-        # The cache is keyed by epoch pair but holds absolute sampled fluxes;
-        # clear it per-test so each temp Zarr root is rescanned.
-        _PRODUCT_PAIR_CACHE.clear()
+        _PRODUCT_GROUPS_CACHE.clear()
+        _PRODUCT_SCAN_CACHE.clear()
 
     def tearDown(self) -> None:
         if self.previous_root is None:
@@ -144,6 +143,32 @@ class SpectroscopyTests(unittest.TestCase):
         self.assertAlmostEqual(anomaly["wavelength_um"], 4.27, places=2)
         self.assertGreater(anomaly["significance"], 5.0)
         self.assertIn("not confirmation of sublimation", anomaly["narrative"])
+
+    def test_anomaly_cache_isolated_by_zarr_root(self) -> None:
+        changed = find_anomalies(min_significance=5.0, zarr_root=self.root)
+        self.assertEqual(changed["count"], 1)
+
+        with tempfile.TemporaryDirectory() as other_directory:
+            other_root = Path(other_directory)
+            for name, epoch in (
+                ("a-1", "epoch-2025-03"),
+                ("a-2", "epoch-2025-03"),
+                ("b-1", "epoch-2025-09"),
+                ("b-2", "epoch-2025-09"),
+            ):
+                wavelength = 3.0 if name.endswith("1") else 4.27
+                _create_sample_group(
+                    other_root,
+                    name=name,
+                    target_id="test-variable",
+                    epoch=epoch,
+                    wavelength=wavelength,
+                    flux=10.0,
+                )
+
+            unchanged = find_anomalies(min_significance=5.0, zarr_root=other_root)
+
+        self.assertEqual(unchanged["count"], 0)
 
     def test_anomaly_scan_logs_and_skips_malformed_complete_group(self) -> None:
         group = zarr.open_group(str(self.root / "malformed.zarr"), mode="w")
