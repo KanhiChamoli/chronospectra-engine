@@ -1,89 +1,21 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
 import { registerAccount, signIn } from "@/lib/auth";
 import type { AuthUser } from "@/types/auth";
-
-interface TurnstileApi {
-  render: (
-    element: HTMLElement,
-    options: {
-      sitekey: string;
-      action: "signup";
-      callback: (token: string) => void;
-      "expired-callback": () => void;
-      "error-callback": () => void;
-      theme: "dark";
-    },
-  ) => string;
-  reset: (widgetId?: string) => void;
-  remove: (widgetId: string) => void;
-}
-
-declare global {
-  interface Window {
-    turnstile?: TurnstileApi;
-  }
-}
 
 interface AuthDialogProps {
   onClose: () => void;
   onAuthenticated: (user: AuthUser) => void;
 }
 
-const turnstileScript =
-  "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
-
 export function AuthDialog({ onClose, onAuthenticated }: AuthDialogProps) {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
-  const [captchaToken, setCaptchaToken] = useState("");
-  const captchaContainer = useRef<HTMLDivElement>(null);
-  const widgetId = useRef<string | null>(null);
-  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
-
-  useEffect(() => {
-    if (mode !== "register" || !siteKey || !captchaContainer.current) return;
-    let active = true;
-    const renderWidget = () => {
-      if (!active || !window.turnstile || !captchaContainer.current || widgetId.current) return;
-      widgetId.current = window.turnstile.render(captchaContainer.current, {
-        sitekey: siteKey,
-        action: "signup",
-        theme: "dark",
-        callback: setCaptchaToken,
-        "expired-callback": () => setCaptchaToken(""),
-        "error-callback": () => {
-          setCaptchaToken("");
-          setError("CAPTCHA verification failed to load. Please reload and try again.");
-        },
-      });
-    };
-
-    let script = document.querySelector<HTMLScriptElement>("script[data-turnstile]");
-    if (!script) {
-      script = document.createElement("script");
-      script.src = turnstileScript;
-      script.async = true;
-      script.defer = true;
-      script.dataset.turnstile = "true";
-      document.head.append(script);
-    }
-    script.addEventListener("load", renderWidget);
-    renderWidget();
-    return () => {
-      active = false;
-      script?.removeEventListener("load", renderWidget);
-      if (widgetId.current && window.turnstile) {
-        window.turnstile.remove(widgetId.current);
-        widgetId.current = null;
-      }
-    };
-  }, [mode, siteKey]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -98,10 +30,6 @@ export function AuthDialog({ onClose, onAuthenticated }: AuthDialogProps) {
         onAuthenticated(await signIn(email, password));
         return;
       }
-      if (!siteKey) {
-        throw new Error("Account creation is not configured. Contact the site administrator.");
-      }
-      if (!captchaToken) throw new Error("Complete the CAPTCHA before creating an account.");
       const termsAccepted = fields.get("terms_accepted") === "on";
       if (!termsAccepted) throw new Error("Accept the Privacy Policy and Terms of Service to continue.");
       const result = await registerAccount({
@@ -110,15 +38,11 @@ export function AuthDialog({ onClose, onAuthenticated }: AuthDialogProps) {
         full_name: String(fields.get("full_name") ?? ""),
         date_of_birth: String(fields.get("date_of_birth") ?? ""),
         terms_accepted: termsAccepted,
-        captcha_token: captchaToken,
       });
       setMessage(result.message);
       setMode("login");
-      setCaptchaToken("");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Account request failed.");
-      if (widgetId.current) window.turnstile?.reset(widgetId.current);
-      setCaptchaToken("");
     } finally {
       setBusy(false);
     }
@@ -178,32 +102,18 @@ export function AuthDialog({ onClose, onAuthenticated }: AuthDialogProps) {
             {mode === "register" && <small>Use at least 12 characters.</small>}
           </label>
           {mode === "register" && (
-            <>
-              <label className="consent-row">
-                <input type="checkbox" name="terms_accepted" required />
-                <span>
-                  I agree to the <Link href="/privacy-terms" target="_blank">Privacy Policy &amp; Terms of Service</Link>.
-                </span>
-              </label>
-              {siteKey ? (
-                <div ref={captchaContainer} className="turnstile-box" aria-label="CAPTCHA verification" />
-              ) : (
-                <p className="auth-config-warning" role="status">
-                  Registration is disabled until the administrator configures the CAPTCHA site key.
-                </p>
-              )}
-            </>
+            <label className="consent-row">
+              <input type="checkbox" name="terms_accepted" required />
+              <span>
+                I agree to the <Link href="/privacy-terms" target="_blank">Privacy Policy &amp; Terms of Service</Link>.
+              </span>
+            </label>
           )}
           {error && <p className="error-message" role="alert">{error}</p>}
-          <button className="primary-action" type="submit" disabled={busy || (mode === "register" && !siteKey)}>
+          <button className="primary-action" type="submit" disabled={busy}>
             {busy ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}
           </button>
         </form>
-        {mode === "register" && (
-          <p className="auth-footnote">
-            An email verification link is required before sign-in. Account creation requires a configured email service.
-          </p>
-        )}
       </section>
     </div>
   );

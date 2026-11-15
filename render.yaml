@@ -20,23 +20,5 @@ services:
         value: none
       - key: CHRONOSPECTRA_CORS_ORIGINS
         sync: false
-      - key: CHRONOSPECTRA_FRONTEND_URL
-        sync: false
-      - key: CHRONOSPECTRA_TURNSTILE_HOSTNAMES
-        sync: false
-      - key: CHRONOSPECTRA_TURNSTILE_SECRET_KEY
-        sync: false
       - key: CHRONOSPECTRA_PII_ENCRYPTION_KEY
         sync: false
-      - key: CHRONOSPECTRA_SMTP_HOST
-        sync: false
-      - key: CHRONOSPECTRA_SMTP_PORT
-        value: "587"
-      - key: CHRONOSPECTRA_SMTP_USER
-        sync: false
-      - key: CHRONOSPECTRA_SMTP_PASSWORD
-        sync: false
-      - key: CHRONOSPECTRA_SMTP_FROM
-        sync: false
-      - key: CHRONOSPECTRA_SMTP_STARTTLS
-        value: "true"

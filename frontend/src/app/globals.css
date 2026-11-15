@@ -1651,10 +1651,6 @@ h2 {
   color: var(--cyan);
 }
 
-.turnstile-box {
-  min-height: 66px;
-}
-
 .auth-config-warning,
 .auth-success {
   padding: 10px;

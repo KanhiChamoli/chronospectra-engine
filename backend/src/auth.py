@@ -4,20 +4,13 @@ from __future__ import annotations
 
 import hashlib
 import hmac
-import json
 import logging
 import os
 import re
 import secrets
-import smtplib
 import sqlite3
-import ssl
-import urllib.error
-import urllib.parse
-import urllib.request
 from contextlib import contextmanager
 from datetime import date, datetime, timedelta, timezone
-from email.message import EmailMessage
 from pathlib import Path
 from typing import Annotated, Iterator
 
@@ -29,7 +22,6 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1")
 SESSION_COOKIE = "chronospectra_session"
 SESSION_TTL = timedelta(days=14)
-VERIFICATION_TTL = timedelta(hours=24)
 EMAIL_PATTERN = re.compile(r"^[^@\s]{1,64}@[^@\s]{1,253}\.[^@\s]{2,63}$")
 
 
@@ -39,7 +31,6 @@ class RegisterRequest(BaseModel):
     full_name: str = Field(min_length=1, max_length=120)
     date_of_birth: date
     terms_accepted: bool
-    captcha_token: str = Field(min_length=1, max_length=4096)
 
     @field_validator("email")
     @classmethod
@@ -68,10 +59,6 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     email: str
     password: str = Field(min_length=1, max_length=128)
-
-
-class VerifyEmailRequest(BaseModel):
-    token: str = Field(min_length=32, max_length=256)
 
 
 class ObservationCreate(BaseModel):
@@ -225,99 +212,6 @@ def _encrypt_date_of_birth(value: date) -> str:
         ) from exc
 
 
-def verify_turnstile(token: str, remote_ip: str | None) -> None:
-    secret = os.environ.get("CHRONOSPECTRA_TURNSTILE_SECRET_KEY")
-    if not secret:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Sign-up verification is not configured. Contact the site administrator.",
-        )
-    expected_hostnames = {
-        hostname.strip().lower().rstrip(".")
-        for hostname in os.environ.get("CHRONOSPECTRA_TURNSTILE_HOSTNAMES", "").split(",")
-        if hostname.strip()
-    }
-    if not expected_hostnames:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Sign-up verification hostnames are not configured.",
-        )
-    fields = {"secret": secret, "response": token}
-    if remote_ip:
-        fields["remoteip"] = remote_ip
-    request = urllib.request.Request(
-        "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-        data=urllib.parse.urlencode(fields).encode("ascii"),
-        headers={"Content-Type": "application/x-www-form-urlencoded"},
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(request, timeout=8) as response:
-            result = response.read(16_384)
-        payload = json.loads(result)
-    except (OSError, urllib.error.URLError, ValueError) as exc:
-        logger.exception("Turnstile verification request failed")
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Could not verify the CAPTCHA right now. Please try again.",
-        ) from exc
-    if not _valid_turnstile_payload(payload, expected_hostnames):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="CAPTCHA verification failed. Please complete it again.",
-        )
-
-
-def _valid_turnstile_payload(payload: object, expected_hostnames: set[str]) -> bool:
-    if not isinstance(payload, dict):
-        return False
-    hostname = payload.get("hostname")
-    return (
-        payload.get("success") is True
-        and isinstance(hostname, str)
-        and hostname.lower().rstrip(".") in expected_hostnames
-        and payload.get("action") == "signup"
-    )
-
-
-def send_verification_email(email: str, token: str) -> None:
-    required = (
-        "CHRONOSPECTRA_SMTP_HOST",
-        "CHRONOSPECTRA_SMTP_USER",
-        "CHRONOSPECTRA_SMTP_PASSWORD",
-        "CHRONOSPECTRA_SMTP_FROM",
-        "CHRONOSPECTRA_FRONTEND_URL",
-    )
-    missing = [key for key in required if not os.environ.get(key)]
-    if missing:
-        raise RuntimeError(
-            "Email verification is not configured; missing " + ", ".join(missing)
-        )
-    frontend = os.environ["CHRONOSPECTRA_FRONTEND_URL"].rstrip("/")
-    verify_url = f"{frontend}/verify?token={urllib.parse.quote(token)}"
-    message = EmailMessage()
-    message["Subject"] = "Verify your Chronospectra account"
-    message["From"] = os.environ["CHRONOSPECTRA_SMTP_FROM"]
-    message["To"] = email
-    message.set_content(
-        "Verify your Chronospectra account using this link. "
-        f"The link expires in 24 hours:\n\n{verify_url}\n"
-    )
-    host = os.environ["CHRONOSPECTRA_SMTP_HOST"]
-    port = int(os.environ.get("CHRONOSPECTRA_SMTP_PORT", "587"))
-    timeout = 10
-    with smtplib.SMTP(host, port, timeout=timeout) as smtp:
-        smtp.ehlo()
-        if os.environ.get("CHRONOSPECTRA_SMTP_STARTTLS", "true").lower() == "true":
-            smtp.starttls(context=ssl.create_default_context())
-            smtp.ehlo()
-        smtp.login(
-            os.environ["CHRONOSPECTRA_SMTP_USER"],
-            os.environ["CHRONOSPECTRA_SMTP_PASSWORD"],
-        )
-        smtp.send_message(message)
-
-
 def _check_origin(request: Request) -> None:
     origin = request.headers.get("origin")
     if not origin:
@@ -361,7 +255,7 @@ def _session_user(
 CurrentUser = Annotated[dict[str, object], Depends(_session_user)]
 
 
-@router.post("/auth/register", status_code=status.HTTP_202_ACCEPTED)
+@router.post("/auth/register", status_code=status.HTTP_201_CREATED)
 def register(payload: RegisterRequest, request: Request) -> dict[str, str]:
     _check_origin(request)
     if payload.terms_accepted is not True:
@@ -369,71 +263,36 @@ def register(payload: RegisterRequest, request: Request) -> dict[str, str]:
             status_code=422,
             detail="Accept the Privacy Policy and Terms of Service to create an account.",
         )
-    verify_turnstile(payload.captcha_token, request.client.host if request.client else None)
     initialize_auth_db()
     now = _now()
-    verification_token = secrets.token_urlsafe(32)
     try:
         with _connect() as connection:
-            cursor = connection.execute(
+            connection.execute(
                 """
                 INSERT INTO users (
                     email, password_hash, full_name, date_of_birth,
-                    verification_hash, verification_expires_at,
-                    terms_accepted_at, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    email_verified, terms_accepted_at, created_at
+                ) VALUES (?, ?, ?, ?, 1, ?, ?)
                 """,
                 (
                     payload.email,
                     _password_hash(payload.password),
                     payload.full_name,
                     _encrypt_date_of_birth(payload.date_of_birth),
-                    _token_hash(verification_token),
-                    _iso(now + VERIFICATION_TTL),
                     _iso(now),
                     _iso(now),
                 ),
             )
-            user_id = cursor.lastrowid
     except sqlite3.IntegrityError:
         logger.info("Registration attempted for an existing email address")
-        return {
-            "message": "If this email address can be registered, check it for verification instructions."
-        }
-    try:
-        send_verification_email(payload.email, verification_token)
-    except (OSError, RuntimeError, smtplib.SMTPException, ValueError) as exc:
-        logger.exception("Could not send verification email for user id %s", user_id)
-        with _connect() as connection:
-            connection.execute("DELETE FROM users WHERE id = ?", (user_id,))
         raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="We could not send the verification email. No account was created; try again later.",
-        ) from exc
-    return {
-        "message": "If this email address can be registered, check it for verification instructions."
-    }
+            status_code=status.HTTP_409_CONFLICT,
+            detail="An account with this email address already exists.",
+        )
+    return {"message": "Account created. You can now sign in."}
 
 
-@router.post("/auth/verify-email")
-def verify_email(payload: VerifyEmailRequest) -> dict[str, str]:
-    initialize_auth_db()
-    with _connect() as connection:
-        cursor = connection.execute(
-            """
-            UPDATE users
-            SET email_verified = 1, verification_hash = NULL,
-                verification_expires_at = NULL
-            WHERE verification_hash = ? AND verification_expires_at > ?
-            """,
-            (_token_hash(payload.token), _iso(_now())),
-        )
-    if cursor.rowcount != 1:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="This verification link is invalid or has expired.",
-        )
-    return {"message": "Email verified. You can now sign in."}
+
 
 
 @router.post("/auth/login")

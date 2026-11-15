@@ -21,7 +21,6 @@ export interface RegistrationInput {
   full_name: string;
   date_of_birth: string;
   terms_accepted: boolean;
-  captcha_token: string;
 }
 
 export interface ObservationInput {

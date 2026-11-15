@@ -26,9 +26,7 @@ export default function PrivacyTermsPage() {
         personal information in observing notes.
       </p>
       <p>
-        Cloudflare Turnstile processes CAPTCHA requests, and the configured
-        email provider sends account verification messages. Their own privacy
-        policies apply when these services are enabled. Browser location is
+        Browser location is
         requested for local sky coordinates; the app uses the browser-provided
         coordinates in the page and does not send them to a reverse-geocoding
         service.

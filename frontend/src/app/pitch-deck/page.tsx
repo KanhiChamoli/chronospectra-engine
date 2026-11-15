@@ -114,7 +114,7 @@ export default function PitchDeckPage() {
           <li>WWT, NASA/IPAC IRSA, Gaia, SIMBAD, and challenge resources are credited separately.</li>
           <li><strong>Demo values are synthetic—not NASA observations or scientific evidence.</strong></li>
           <li>The final SIA2 attempt in this environment stopped at the IRSA capabilities endpoint with a proxy HTTP 502; no verified QR3 products were downloaded.</li>
-          <li>Next: retry IRSA when reachable, validate real product coverage, then deploy with production Turnstile, SMTP, secure keys, and persistent storage.</li>
+          <li>Next: retry IRSA when reachable and validate real product coverage with secure keys and persistent storage.</li>
         </ul>
         <nav className="pitch-resources" aria-label="Pitch deck resources">
           <a href="https://irsa.ipac.caltech.edu/Missions/spherex.html" target="_blank" rel="noreferrer">IRSA SPHEREx archive ↗</a>

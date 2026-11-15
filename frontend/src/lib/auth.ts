@@ -65,9 +65,7 @@ export function signOut(): Promise<{ message: string }> {
   return requestJson("/api/v1/auth/logout", "POST", {});
 }
 
-export function verifyEmail(token: string): Promise<{ message: string }> {
-  return requestJson("/api/v1/auth/verify-email", "POST", { token });
-}
+
 
 export function getObservations(): Promise<Observation[]> {
   return requestJson("/api/v1/observations");

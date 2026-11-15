@@ -13,9 +13,8 @@ alone establishes a physical discovery.
 
 The observatory now includes an original, responsive sky-explorer shell,
 catalog search, WWT viewport controls, object details, and an account-backed
-observation logbook. Authentication is intentionally fail-closed: public
-registration requires a configured Cloudflare Turnstile site/secret pair, an
-SMTP verification sender, and an encryption key for date-of-birth data.
+observation logbook. Registration is a classic email + password flow with a
+required terms/privacy consent and encrypted date-of-birth storage.
 
 ## Architecture
 
@@ -122,8 +121,7 @@ Useful endpoints:
 | `GET /api/v1/spectra?ra_deg=...&dec_deg=...` | Nearest-pixel samples grouped by epoch |
 | `GET /api/v1/anomalies?min_significance=5` | Epoch-differential candidates |
 | `GET /api/v1/anomalies?epoch_a=...&epoch_b=...` | Candidates for the selected epoch pair |
-| `POST /api/v1/auth/register` | CAPTCHA-checked account creation and verification email |
-| `POST /api/v1/auth/verify-email` | Verify an email using its one-time token |
+| `POST /api/v1/auth/register` | Classic account creation (email, password, consent) |
 | `POST /api/v1/auth/login`, `POST /api/v1/auth/logout`, `GET /api/v1/auth/me` | Cookie-backed session lifecycle |
 | `GET/POST /api/v1/observations` | List or save the signed-in user's observations |
 | `PATCH/DELETE /api/v1/observations/{id}` | Edit notes or remove an owned observation |
@@ -137,7 +135,7 @@ The sample `.env.example` files document the supported settings; the server
 process needs those variables set in its environment (they are not loaded
 automatically from a `.env` file).
 
-#### Account and email configuration
+#### Account configuration
 
 The API stores profiles, hashed sessions, and observations in a local SQLite
 database (`CHRONOSPECTRA_AUTH_DB`). Use a persistent disk for this database;
@@ -153,13 +151,6 @@ the API host's environment:
 ```powershell
 python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
 ```
-
-Set `CHRONOSPECTRA_TURNSTILE_SECRET_KEY` from Cloudflare Turnstile and put the
-matching public site key in `frontend/.env.local` as
-`NEXT_PUBLIC_TURNSTILE_SITE_KEY`. Registration is disabled until both sides
-are set. Configure `CHRONOSPECTRA_SMTP_HOST`, `PORT`, `USER`, `PASSWORD`,
-`FROM`, and `CHRONOSPECTRA_FRONTEND_URL` so registration can send its
-24-hour verification link. SMTP STARTTLS is on by default.
 
 For local development, set `CHRONOSPECTRA_COOKIE_SECURE=false` and
 `CHRONOSPECTRA_COOKIE_SAMESITE=strict`. In production use HTTPS and set
@@ -198,8 +189,8 @@ The map's **External survey** menu can layer the IRSA-hosted AllWISE RGB or
 spectral data.
 
 The account dialog collects name, email, date of birth, a 12-character-minimum
-password, required terms/privacy consent, and a Turnstile challenge. Users must
-verify email before signing in. The left logbook saves targets and notes to
+password, and required terms/privacy consent. Accounts are usable immediately
+after registration. The left logbook saves targets and notes to
 the authenticated API; the API scopes every read/update/delete by account.
 The map uses browser geolocation only after the browser's permission prompt,
 and displays coordinates without sending them to a reverse-geocoding provider.
@@ -351,8 +342,6 @@ hidden.
 2. Keep the framework preset as Next.js. The checked-in `frontend/vercel.json`
    uses `npm ci` and `npm run build`; no extra rewrite or CORS proxy is needed.
 3. Configure `NEXT_PUBLIC_API_BASE_URL` to the public HTTPS API base URL.
-   Configure `NEXT_PUBLIC_TURNSTILE_SITE_KEY` with the public Cloudflare
-   Turnstile site key.
 4. Optionally set `NEXT_PUBLIC_HIPS_BASE_URL` to the public custom domain for
    the mirrored HiPS tree. These values are public browser configuration; do
    not put secrets in `NEXT_PUBLIC_*`.
@@ -383,17 +372,10 @@ environment variables in the Render dashboard:
 | Variable | Value / where to get it |
 | --- | --- |
 | `CHRONOSPECTRA_CORS_ORIGINS` | Exact browser origin(s), e.g. `https://chronospectra.example.org`; comma-separated only if needed. No wildcard. |
-| `CHRONOSPECTRA_FRONTEND_URL` | Full deployed frontend URL, e.g. `https://chronospectra.example.org`. |
-| `CHRONOSPECTRA_TURNSTILE_HOSTNAMES` | Exact hostnames allowed by your Turnstile widget, e.g. `chronospectra.example.org`; no scheme or path. Add preview hostnames only if you intend to accept registrations there. |
-| `CHRONOSPECTRA_TURNSTILE_SECRET_KEY` | Cloudflare Turnstile **secret** key. The frontend receives only the matching site key. Server validation checks the CAPTCHA success, hostname, and `signup` action. |
 | `CHRONOSPECTRA_PII_ENCRYPTION_KEY` | A new Fernet key generated with the command below. Back it up securely; do not rotate without migrating encrypted data. |
-| `CHRONOSPECTRA_SMTP_HOST` | SMTP provider hostname. |
-| `CHRONOSPECTRA_SMTP_USER` / `CHRONOSPECTRA_SMTP_PASSWORD` | SMTP credentials stored as Render secrets. |
-| `CHRONOSPECTRA_SMTP_FROM` | Verified sender address. |
 
 The Blueprint sets `CHRONOSPECTRA_AUTH_DB=/var/data/chronospectra.sqlite3`,
-`CHRONOSPECTRA_ZARR_ROOT=/var/data/processed/zarr`, TLS-secure cookies, and
-SMTP port 587 with STARTTLS. It binds to Render's `$PORT` (falling back to 8000
+`CHRONOSPECTRA_ZARR_ROOT=/var/data/processed/zarr` and TLS-secure cookies. It binds to Render's `$PORT` (falling back to 8000
 for local Docker). Keep this deployment to one API instance while using SQLite
 and its attached disk. The attached volume is not shared across replicas.
 
@@ -416,7 +398,6 @@ Set these additional **Vercel** variables:
 | Variable | Value |
 | --- | --- |
 | `NEXT_PUBLIC_API_BASE_URL` | Render API HTTPS origin, with no trailing path, e.g. `https://chronospectra-api.onrender.com`. |
-| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Cloudflare Turnstile public site key for the production hostname. |
 | `NEXT_PUBLIC_HIPS_BASE_URL` | Optional public HiPS mirror URL; omit it to use the public IRSA URL. |
 
 Set `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and
@@ -429,8 +410,7 @@ have a specific, audited public-serving use case.
 
 The deployment files configure infrastructure only; they do not create
 provider accounts, DNS records, credentials, or live deployments. Review
-Cloudflare Turnstile's domain allowlist, SMTP sender authorization, Vercel
-environment scope, and Render disk persistence before accepting registrations.
+Vercel environment scope and Render disk persistence before accepting registrations.
 
 ### Recommended hosting layout
 

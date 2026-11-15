@@ -9,7 +9,6 @@ from cryptography.fernet import Fernet
 from fastapi.testclient import TestClient
 
 from backend.main import app
-from backend.src.auth import _valid_turnstile_payload
 
 
 class AuthApiTests(unittest.TestCase):
@@ -25,105 +24,26 @@ class AuthApiTests(unittest.TestCase):
         )
         self.environment.start()
         self.client = TestClient(app)
-        self.captcha = patch("backend.src.auth.verify_turnstile")
-        self.email = patch("backend.src.auth.send_verification_email")
-        self.captcha.start()
-        self.email_mock = self.email.start()
 
     def tearDown(self) -> None:
-        self.email.stop()
-        self.captcha.stop()
         self.environment.stop()
         self.temp.cleanup()
 
-    def register_and_verify(self) -> None:
-        response = self.client.post(
+    def register(self, email: str = "observer@example.org", terms: bool = True) -> object:
+        return self.client.post(
             "/api/v1/auth/register",
             json={
-                "email": "observer@example.org",
+                "email": email,
                 "password": "space-observation-phrase",
                 "full_name": "A Sky Observer",
                 "date_of_birth": "1994-04-12",
-                "terms_accepted": True,
-                "captcha_token": "turnstile-test-token",
+                "terms_accepted": terms,
             },
         )
-        self.assertEqual(response.status_code, 202, response.text)
-        self.assertEqual(self.email_mock.call_count, 1)
-        verified = self.client.post(
-            "/api/v1/auth/verify-email",
-            json={"token": self.email_mock.call_args.args[1]},
-        )
-        self.assertEqual(verified.status_code, 200, verified.text)
 
-    def test_turnstile_validation_checks_success_hostname_and_action(self) -> None:
-        valid_payload = {
-            "success": True,
-            "hostname": "app.example.org",
-            "action": "signup",
-        }
-        self.assertTrue(_valid_turnstile_payload(valid_payload, {"app.example.org"}))
-        self.assertFalse(_valid_turnstile_payload(valid_payload, {"other.example.org"}))
-        self.assertFalse(
-            _valid_turnstile_payload(
-                {**valid_payload, "action": "login"},
-                {"app.example.org"},
-            )
-        )
-        self.assertFalse(
-            _valid_turnstile_payload(
-                {**valid_payload, "success": False},
-                {"app.example.org"},
-            )
-        )
-
-    def test_registration_requires_consent_and_captcha(self) -> None:
-        response = self.client.post(
-            "/api/v1/auth/register",
-            json={
-                "email": "observer@example.org",
-                "password": "space-observation-phrase",
-                "full_name": "A Sky Observer",
-                "date_of_birth": "1994-04-12",
-                "terms_accepted": False,
-                "captcha_token": "turnstile-test-token",
-            },
-        )
-        self.assertEqual(response.status_code, 422)
-        self.assertEqual(self.email_mock.call_count, 0)
-
-    def test_registration_rolls_back_if_verification_email_cannot_be_sent(self) -> None:
-        self.email_mock.side_effect = RuntimeError("SMTP unavailable")
-        response = self.client.post(
-            "/api/v1/auth/register",
-            json={
-                "email": "observer@example.org",
-                "password": "space-observation-phrase",
-                "full_name": "A Sky Observer",
-                "date_of_birth": "1994-04-12",
-                "terms_accepted": True,
-                "captcha_token": "turnstile-test-token",
-            },
-        )
-        self.assertEqual(response.status_code, 503)
-        connection = sqlite3.connect(os.environ["CHRONOSPECTRA_AUTH_DB"])
-        try:
-            self.assertEqual(connection.execute("SELECT COUNT(*) FROM users").fetchone()[0], 0)
-        finally:
-            connection.close()
-
-    def test_email_verification_login_and_observation_crud(self) -> None:
-        self.register_and_verify()
-        connection = sqlite3.connect(os.environ["CHRONOSPECTRA_AUTH_DB"])
-        try:
-            stored_dob, stored_password = connection.execute(
-                "SELECT date_of_birth, password_hash FROM users"
-            ).fetchone()
-        finally:
-            connection.close()
-        self.assertNotEqual(stored_dob, "1994-04-12")
-        self.assertEqual(Fernet(self.encryption_key).decrypt(stored_dob.encode()).decode(), "1994-04-12")
-        self.assertTrue(stored_password.startswith("scrypt$"))
+    def register_and_sign_in(self) -> None:
+        response = self.register()
+        self.assertEqual(response.status_code, 201, response.text)
         login = self.client.post(
             "/api/v1/auth/login",
             json={
@@ -134,6 +54,28 @@ class AuthApiTests(unittest.TestCase):
         self.assertEqual(login.status_code, 200, login.text)
         self.assertTrue(login.json()["email_verified"])
         self.assertIn("chronospectra_session", login.cookies)
+
+    def test_registration_requires_consent(self) -> None:
+        response = self.register(terms=False)
+        self.assertEqual(response.status_code, 422)
+
+    def test_registration_rejects_duplicate_email(self) -> None:
+        self.assertEqual(self.register().status_code, 201)
+        duplicate = self.register()
+        self.assertEqual(duplicate.status_code, 409, duplicate.text)
+
+    def test_registration_login_and_observation_crud(self) -> None:
+        self.register_and_sign_in()
+        connection = sqlite3.connect(os.environ["CHRONOSPECTRA_AUTH_DB"])
+        try:
+            stored_dob, stored_password = connection.execute(
+                "SELECT date_of_birth, password_hash FROM users"
+            ).fetchone()
+        finally:
+            connection.close()
+        self.assertNotEqual(stored_dob, "1994-04-12")
+        self.assertEqual(Fernet(self.encryption_key).decrypt(stored_dob.encode()).decode(), "1994-04-12")
+        self.assertTrue(stored_password.startswith("scrypt$"))
 
         created = self.client.post(
             "/api/v1/observations",
@@ -161,17 +103,7 @@ class AuthApiTests(unittest.TestCase):
         self.assertEqual(self.client.get("/api/v1/observations").json(), [])
 
     def test_account_deletion_cascades_and_revokes_session(self) -> None:
-        self.register_and_verify()
-        self.assertEqual(
-            self.client.post(
-                "/api/v1/auth/login",
-                json={
-                    "email": "observer@example.org",
-                    "password": "space-observation-phrase",
-                },
-            ).status_code,
-            200,
-        )
+        self.register_and_sign_in()
         saved = self.client.post(
             "/api/v1/observations",
             json={"ra_deg": 10, "dec_deg": 20, "target_name": "Vega"},
@@ -181,28 +113,16 @@ class AuthApiTests(unittest.TestCase):
         self.assertEqual(deleted.status_code, 204)
         self.assertEqual(self.client.get("/api/v1/auth/me").status_code, 401)
 
-    def test_unverified_user_cannot_sign_in_and_sessions_are_private(self) -> None:
-        response = self.client.post(
-            "/api/v1/auth/register",
-            json={
-                "email": "observer@example.org",
-                "password": "space-observation-phrase",
-                "full_name": "A Sky Observer",
-                "date_of_birth": "1994-04-12",
-                "terms_accepted": True,
-                "captcha_token": "turnstile-test-token",
-            },
-        )
-        self.assertEqual(response.status_code, 202)
+    def test_unauthenticated_requests_are_rejected(self) -> None:
+        self.assertEqual(self.client.get("/api/v1/observations").status_code, 401)
         login = self.client.post(
             "/api/v1/auth/login",
             json={
-                "email": "observer@example.org",
-                "password": "space-observation-phrase",
+                "email": "unknown@example.org",
+                "password": "not-the-password",
             },
         )
         self.assertEqual(login.status_code, 401)
-        self.assertEqual(self.client.get("/api/v1/observations").status_code, 401)
 
     def test_sign_in_attempts_are_rate_limited(self) -> None:
         for _ in range(8):
