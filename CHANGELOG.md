@@ -15,6 +15,18 @@ Notable Chronospectra changes are documented here. Dates use ISO 8601.
 - Added an optional video-generation script and isolated media requirements;
   these do not add dependencies to the production frontend or API.
 
+### Observatory interaction and QR3 ingestion
+
+- Added persistent, user-toggleable retro button beeps and a small animated
+  orbital marker beside the temporal sky heading. The animation respects the
+  existing reduced-motion preference.
+- Added an explicit verified-QR3 product count; only non-synthetic groups with
+  QR3 collection metadata, an archive product ID, and an HTTPS IRSA source URL
+  qualify. Synthetic demo products remain separate.
+- Added bounded retries for transient IRSA SIA2 and FITS-download failures.
+  Query failures are recorded per target in the ingest manifest, and incomplete
+  queries still fail the ingestion command.
+
 ### Account, audio, and deployment polish
 
 - Configured Render to generate a persistent secret seed for Fernet-protected

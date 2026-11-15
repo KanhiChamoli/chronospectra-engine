@@ -134,6 +134,31 @@ class SpectroscopyTests(unittest.TestCase):
         self.assertEqual(result["product_count"], 4)
         self.assertEqual(result["target_count"], 1)
         self.assertEqual(len(result["epochs"]), 2)
+        self.assertEqual(result["verified_product_count"], 0)
+
+    def test_data_status_requires_irsa_qr3_provenance_for_verified_count(self) -> None:
+        verified = zarr.open_group(str(self.root / "a-1.zarr"), mode="a")
+        verified.attrs.update(
+            {
+                "release": "QR3",
+                "archive_collection": "spherex_qr3",
+                "archive_product_id": "ivo://irsa/spherex_qr3/product-1",
+                "archive_access_url": "https://irsa.ipac.caltech.edu/ibe/product-1.fits",
+            }
+        )
+        untrusted = zarr.open_group(str(self.root / "a-2.zarr"), mode="a")
+        untrusted.attrs.update(
+            {
+                "release": "QR3",
+                "archive_collection": "spherex_qr3",
+                "archive_product_id": "product-2",
+                "archive_access_url": "https://example.test/product-2.fits",
+            }
+        )
+
+        result = get_data_status(self.root)
+
+        self.assertEqual(result["verified_product_count"], 1)
 
     def test_anomaly_detects_significant_co2_band_change(self) -> None:
         result = find_anomalies(min_significance=5.0)
@@ -233,6 +258,7 @@ class SpectroscopyTests(unittest.TestCase):
         status_response = client.get("/api/v1/data-status")
         self.assertEqual(status_response.status_code, 200)
         self.assertTrue(status_response.json()["ready"])
+        self.assertEqual(status_response.json()["verified_product_count"], 0)
 
 
 if __name__ == "__main__":

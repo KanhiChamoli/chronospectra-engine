@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { BookOpen, ChevronLeft, ExternalLink, Info, LogOut, Menu, Pause, Play, Presentation, Trash, UserRoundX, Volume2 } from "lucide-react";
+import { BookOpen, ChevronLeft, ExternalLink, Info, LogOut, Menu, Pause, Play, Presentation, Trash, UserRoundX, Volume2, VolumeX } from "lucide-react";
 import { useBackgroundAudio } from "@/components/BackgroundAudioProvider";
 import type { AuthUser, Observation } from "@/types/auth";
 
@@ -36,7 +36,16 @@ export function ObservationSidebar({
   onUpdateNotes,
 }: ObservationSidebarProps) {
   const [notes, setNotes] = useState<Record<number, string>>({});
-  const { isPlaying, volume, playbackError, toggleMusic, setVolume } = useBackgroundAudio();
+  const {
+    isPlaying,
+    volume,
+    playbackError,
+    clickSoundsEnabled,
+    clickSoundError,
+    toggleMusic,
+    toggleClickSounds,
+    setVolume,
+  } = useBackgroundAudio();
 
   return (
     <aside className={`observatory-sidebar${open ? " expanded" : ""}`} aria-label="Observatory navigation">
@@ -94,7 +103,7 @@ export function ObservationSidebar({
             </button>
           </div>
         )}
-        <section className="sidebar-audio" aria-label="Background music controls">
+        <section className="sidebar-audio" aria-label="Sound controls">
           <button
             type="button"
             className="sidebar-link music-toggle"
@@ -104,6 +113,17 @@ export function ObservationSidebar({
           >
             <span aria-hidden="true">{isPlaying ? <Pause size={15} /> : <Play size={15} />}</span>
             <span>{isPlaying ? "Music on" : "Music off"}</span>
+          </button>
+          <button
+            type="button"
+            className="sidebar-link click-sound-toggle"
+            onClick={toggleClickSounds}
+            aria-pressed={clickSoundsEnabled}
+          >
+            <span aria-hidden="true">
+              {clickSoundsEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
+            </span>
+            <span>Retro beeps {clickSoundsEnabled ? "on" : "off"}</span>
           </button>
           <label className="music-volume">
             <span><Volume2 size={13} /> Volume <output>{Math.round(volume * 100)}%</output></span>
@@ -118,6 +138,7 @@ export function ObservationSidebar({
             />
           </label>
           {playbackError && <p className="music-error" role="status">{playbackError}</p>}
+          {clickSoundError && <p className="music-error" role="status">{clickSoundError}</p>}
         </section>
         <nav className="sidebar-footer" aria-label="About Chronospectra">
           <Link href="/pitch-deck"><span aria-hidden="true"><Presentation size={15} /></span><span>Pitch deck</span></Link>

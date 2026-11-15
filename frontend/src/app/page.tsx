@@ -494,11 +494,34 @@ export default function ObservatoryPage() {
       <div className="workspace">
         <section className="sky-section">
           <div className="section-heading">
-            <div>
-              <p className="eyebrow">ALL-SKY OBSERVATORY / ICRS</p>
-              <h1>Temporal sky explorer</h1>
+            <div className="section-heading-title">
+              <div>
+                <p className="eyebrow">ALL-SKY OBSERVATORY / ICRS</p>
+                <h1>Temporal sky explorer</h1>
+              </div>
+              <svg
+                className="temporal-orbit-mark"
+                viewBox="0 0 64 64"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <circle className="temporal-orbit-track" cx="32" cy="32" r="22" />
+                <ellipse
+                  className="temporal-orbit-track temporal-orbit-track-tilted"
+                  cx="32"
+                  cy="32"
+                  rx="25"
+                  ry="10"
+                  transform="rotate(-32 32 32)"
+                />
+                <circle className="temporal-orbit-core" cx="32" cy="32" r="8" />
+                <circle className="temporal-orbit-glint" cx="29" cy="29" r="2" />
+                <g className="temporal-orbit-rotor">
+                  <circle className="temporal-orbit-moon" cx="54" cy="32" r="3.5" />
+                </g>
+              </svg>
             </div>
-            <span className="data-badge">QR3 DATA STATUS · DR1 HiPS REFERENCE</span>
+            <span className="data-badge">QR3 DATA STATUS · DR1 HiPS</span>
           </div>
           <WorldWideTelescopeView
             anomalies={anomalies}
@@ -543,6 +566,8 @@ export default function ObservatoryPage() {
                 DEMO MODE · {dataStatus.synthetic_product_count.toLocaleString()} SYNTHETIC PRODUCTS
               </strong>
               <span>
+                Verified QR3 products staged:{" "}
+                {(dataStatus.verified_product_count ?? 0).toLocaleString()}.{" "}
                 These generated samples exercise the interface; they are not NASA/SPHEREx
                 observations and are not scientific evidence. Explore the challenge&apos;s
                 recommended data and inspiration:
@@ -586,6 +611,20 @@ export default function ObservatoryPage() {
               </nav>
             </div>
           )}
+          {dataStatus &&
+            dataStatus.verified_product_count > 0 &&
+            dataStatus.synthetic_product_count === 0 && (
+              <div className="data-readiness" role="status">
+                <strong>
+                  VERIFIED QR3 · {dataStatus.verified_product_count.toLocaleString()} PRODUCTS
+                </strong>
+                <span>
+                  Products are counted as verified only when their QR3 collection,
+                  archive identifier, and IRSA access URL are present. Review detector
+                  flags and product provenance before scientific interpretation.
+                </span>
+              </div>
+            )}
           {dataStatusError && (
             <p className="error-message inline-error">
               QR3 readiness check failed: {dataStatusError}

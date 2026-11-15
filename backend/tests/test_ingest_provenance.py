@@ -1,16 +1,23 @@
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import numpy as np
+import requests
 from astropy import units as u
 from astropy.coordinates import SkyCoord
+from astropy.table import Table
+from astropy.time import Time
+from pyvo.dal.exceptions import DALServiceError
 
 from backend.src.ingest_spherex import (
     _download_target_products,
+    _download,
     _product_identifier,
+    _query_target,
     _release_name,
+    _select_quicklook_products,
 )
 
 
@@ -66,6 +73,78 @@ class IngestionProvenanceTests(unittest.TestCase):
         self.assertEqual(archive_url, "https://irsa.example/product.fits")
         self.assertIn("center=10.00000000%2C-20.00000000d", cutout_url)
         self.assertEqual(product_id, "observation-456")
+
+    def test_sia_query_retries_transient_archive_errors(self) -> None:
+        response = object()
+        with (
+            patch(
+                "backend.src.ingest_spherex.Irsa.query_sia",
+                side_effect=[DALServiceError("temporary proxy failure"), response],
+            ) as query,
+            patch("backend.src.ingest_spherex.time.sleep") as sleep,
+        ):
+            result = _query_target(
+                SkyCoord(ra=10 * u.deg, dec=-20 * u.deg),
+                collection="spherex_qr3",
+                radius_arcsec=60,
+            )
+
+        self.assertIs(result, response)
+        self.assertEqual(query.call_count, 2)
+        sleep.assert_called_once_with(1)
+
+    def test_fits_download_retries_temporary_server_errors(self) -> None:
+        unavailable = MagicMock()
+        unavailable.__enter__.return_value = unavailable
+        unavailable.raise_for_status.side_effect = requests.HTTPError(
+            "503 Service Unavailable",
+            response=MagicMock(status_code=503),
+        )
+        available = MagicMock()
+        available.__enter__.return_value = available
+        available.iter_content.return_value = [b"FITS"]
+
+        with tempfile.TemporaryDirectory() as temporary, patch(
+            "backend.src.ingest_spherex.requests.get",
+            side_effect=[unavailable, available],
+        ) as get, patch("backend.src.ingest_spherex.time.sleep") as sleep:
+            destination = Path(temporary) / "product.fits"
+            _download("https://irsa.example/product.fits", destination)
+
+            self.assertEqual(destination.read_bytes(), b"FITS")
+            self.assertFalse(destination.with_suffix(".fits.part").exists())
+
+        self.assertEqual(get.call_count, 2)
+        sleep.assert_called_once_with(1)
+
+    def test_quicklook_keeps_latest_product_per_detector_and_epoch(self) -> None:
+        epoch_a = Time("2026-03-15T00:00:00", scale="utc").mjd
+        epoch_b = Time("2026-09-15T00:00:00", scale="utc").mjd
+        results = Table(
+            {
+                "t_min": [epoch_a, epoch_a + 1, epoch_a + 2, epoch_b, epoch_b + 1],
+                "obs_publisher_did": [
+                    "ivo://irsa/spherex_qr3?visit-1/D1",
+                    "ivo://irsa/spherex_qr3?visit-2/D1",
+                    "ivo://irsa/spherex_qr3?visit-3/D2",
+                    "ivo://irsa/spherex_qr3?visit-4/D1",
+                    "ivo://irsa/spherex_qr3?visit-5/D2",
+                ],
+            }
+        )
+
+        selected = _select_quicklook_products(results)
+
+        self.assertEqual(len(selected), 4)
+        self.assertEqual(
+            list(selected["obs_publisher_did"]),
+            [
+                "ivo://irsa/spherex_qr3?visit-2/D1",
+                "ivo://irsa/spherex_qr3?visit-3/D2",
+                "ivo://irsa/spherex_qr3?visit-4/D1",
+                "ivo://irsa/spherex_qr3?visit-5/D2",
+            ],
+        )
 
 
 if __name__ == "__main__":

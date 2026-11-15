@@ -40,6 +40,7 @@ import logging
 import math
 import os
 import re
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -56,6 +57,7 @@ from astropy.wcs import WCS
 from astroquery.ipac.irsa import Irsa
 from botocore.config import Config
 from boto3 import client as boto3_client
+from pyvo.dal.exceptions import DALServiceError
 
 try:
     import healpy as hp
@@ -72,6 +74,10 @@ OFFICIAL_HIPS_URL = (
 HEALPIX_NSIDE = 512
 ROW_CHUNK_SIZE = 128
 REMOTE_TIMEOUT_SECONDS = 180
+SIA_QUERY_MAX_ATTEMPTS = 4
+SIA_QUERY_RETRY_DELAY_SECONDS = 1
+DOWNLOAD_MAX_ATTEMPTS = 4
+DOWNLOAD_RETRY_DELAY_SECONDS = 1
 
 TARGETS: dict[str, tuple[str, SkyCoord | None]] = {
     "barnards-star": ("Barnard's Star", None),
@@ -122,17 +128,39 @@ def _download(url: str, destination: Path) -> None:
     """Stream a FITS product to disk and remove partial downloads on failure."""
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = destination.with_suffix(destination.suffix + ".part")
-    try:
-        with requests.get(url, stream=True, timeout=REMOTE_TIMEOUT_SECONDS) as response:
-            response.raise_for_status()
-            with temporary.open("wb") as output:
-                for block in response.iter_content(chunk_size=1024 * 1024):
-                    if block:
-                        output.write(block)
-        temporary.replace(destination)
-    except (requests.RequestException, OSError):
-        temporary.unlink(missing_ok=True)
-        raise
+    for attempt in range(1, DOWNLOAD_MAX_ATTEMPTS + 1):
+        try:
+            with requests.get(url, stream=True, timeout=REMOTE_TIMEOUT_SECONDS) as response:
+                response.raise_for_status()
+                with temporary.open("wb") as output:
+                    for block in response.iter_content(chunk_size=1024 * 1024):
+                        if block:
+                            output.write(block)
+            temporary.replace(destination)
+            return
+        except requests.RequestException as error:
+            temporary.unlink(missing_ok=True)
+            status_code = (
+                error.response.status_code
+                if isinstance(error, requests.HTTPError) and error.response is not None
+                else None
+            )
+            retryable = status_code is None or status_code == 429 or status_code >= 500
+            if not retryable or attempt == DOWNLOAD_MAX_ATTEMPTS:
+                raise
+            delay = DOWNLOAD_RETRY_DELAY_SECONDS * 2 ** (attempt - 1)
+            LOGGER.warning(
+                "FITS download failed (attempt %d/%d): %s; retrying in %d seconds",
+                attempt,
+                DOWNLOAD_MAX_ATTEMPTS,
+                error,
+                delay,
+            )
+            time.sleep(delay)
+        except OSError:
+            temporary.unlink(missing_ok=True)
+            raise
+    raise RuntimeError(f"FITS download ended without a result: {destination}")
 
 
 def _quantity_in_microns(value: Any) -> np.ndarray:
@@ -365,10 +393,68 @@ def _query_target(
 ) -> Any:
     """Query IRSA SIA2 for spectral-image products overlapping one target."""
     Irsa.sia_url = IRSA_SIA2_URL
-    return Irsa.query_sia(
-        pos=(target_coord, radius_arcsec * u.arcsec),
-        collection=[collection],
-    )
+    for attempt in range(1, SIA_QUERY_MAX_ATTEMPTS + 1):
+        try:
+            return Irsa.query_sia(
+                pos=(target_coord, radius_arcsec * u.arcsec),
+                collection=[collection],
+            )
+        except (DALServiceError, requests.RequestException) as error:
+            if attempt == SIA_QUERY_MAX_ATTEMPTS:
+                raise
+            delay = SIA_QUERY_RETRY_DELAY_SECONDS * 2 ** (attempt - 1)
+            LOGGER.warning(
+                "IRSA SIA2 query failed for RA=%.6f Dec=%.6f "
+                "(attempt %d/%d): %s; retrying in %d seconds",
+                target_coord.ra.deg,
+                target_coord.dec.deg,
+                attempt,
+                SIA_QUERY_MAX_ATTEMPTS,
+                error,
+                delay,
+            )
+            time.sleep(delay)
+    raise RuntimeError("IRSA SIA2 query ended without a response")
+
+
+def _select_quicklook_products(results: Any) -> Any:
+    """Keep the latest product per detector and six-month epoch for a small sample."""
+    required_columns = {"t_min", "obs_publisher_did"}
+    missing_columns = required_columns.difference(results.colnames)
+    if missing_columns:
+        raise ValueError(
+            "IRSA SIA2 response is missing quicklook columns: "
+            + ", ".join(sorted(missing_columns))
+        )
+
+    latest_by_detector: dict[tuple[str, str], tuple[float, int]] = {}
+    for index, row in enumerate(results):
+        if np.ma.is_masked(row["t_min"]):
+            continue
+        mjd = float(row["t_min"])
+        if not math.isfinite(mjd):
+            continue
+        product_id = _product_identifier(row, results.colnames)
+        if product_id is None:
+            continue
+        detector_match = re.search(r"/D(\d+)$", product_id)
+        if detector_match is None:
+            continue
+
+        epoch, _ = _epoch_for(Time(mjd, format="mjd").isot)
+        key = (epoch, detector_match.group(1))
+        previous = latest_by_detector.get(key)
+        if previous is None or mjd > previous[0]:
+            latest_by_detector[key] = (mjd, index)
+
+    if len(results) > 0 and not latest_by_detector:
+        raise ValueError(
+            "IRSA SIA2 rows had no usable detector IDs and observation times "
+            "for quicklook selection"
+        )
+
+    selected = sorted(latest_by_detector.values())
+    return results[[index for _, index in selected]]
 
 
 def _release_name(collection: str) -> str:
@@ -533,6 +619,14 @@ def _parse_args() -> argparse.Namespace:
         action="store_true",
         help="Regenerate Zarr groups even when their destination already exists.",
     )
+    parser.add_argument(
+        "--quicklook",
+        action="store_true",
+        help=(
+            "Ingest the latest available product per detector and six-month epoch; "
+            "this is a small, explicitly incomplete sample."
+        ),
+    )
     parser.add_argument("--upload-r2", action="store_true", help="Upload outputs to R2.")
     parser.add_argument(
         "--r2-prefix",
@@ -563,10 +657,15 @@ def main() -> None:
     hips_manifest = _write_hips_manifest(processed_dir / "hips")
     manifest_path = processed_dir / "ingest-manifest.json"
     target_entries: list[dict[str, object]] = []
+    query_errors: list[str] = []
     manifest: dict[str, object] = {
         "service": IRSA_SIA2_URL,
         "release": _release_name(args.collection),
         "collection": args.collection,
+        "selection_mode": (
+            "latest-per-detector-per-epoch" if args.quicklook else "all-matching-products"
+        ),
+        "complete_dataset": False,
         "hips_manifest": str(hips_manifest),
         "targets": target_entries,
     }
@@ -579,13 +678,32 @@ def main() -> None:
             coordinate.ra.deg,
             coordinate.dec.deg,
         )
-        results = _query_target(
-            coordinate,
-            collection=args.collection,
-            radius_arcsec=args.radius_arcsec,
+        try:
+            results = _query_target(
+                coordinate,
+                collection=args.collection,
+                radius_arcsec=args.radius_arcsec,
+            )
+        except (DALServiceError, requests.RequestException) as error:
+            LOGGER.error("IRSA query failed for %s after retries: %s", target_name, error)
+            target_entries.append(
+                {
+                    "target_id": target_id,
+                    "target_name": target_name,
+                    "ra_deg": float(coordinate.ra.deg),
+                    "dec_deg": float(coordinate.dec.deg),
+                    "query_rows": 0,
+                    "products": [],
+                    "query_error": f"{type(error).__name__}: {error}",
+                }
+            )
+            query_errors.append(target_id)
+            continue
+        download_rows = (
+            _select_quicklook_products(results) if args.quicklook else results
         )
         downloads = _download_target_products(
-            results,
+            download_rows,
             target_id=target_id,
             target_coord=coordinate,
             raw_dir=raw_dir,
@@ -598,6 +716,7 @@ def main() -> None:
             "ra_deg": float(coordinate.ra.deg),
             "dec_deg": float(coordinate.dec.deg),
             "query_rows": len(results),
+            "selected_rows": len(download_rows),
             "products": [],
         }
         products: list[dict[str, object]] = []
@@ -625,10 +744,15 @@ def main() -> None:
         target_entries.append(target_result)
 
     processed_dir.mkdir(parents=True, exist_ok=True)
+    manifest["complete_dataset"] = not args.quicklook and not query_errors
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     LOGGER.info("Wrote ingestion manifest: %s", manifest_path)
     if args.upload_r2:
         _upload_to_r2(processed_dir, args.r2_prefix)
+    if query_errors:
+        raise RuntimeError(
+            "IRSA queries failed after retries for: " + ", ".join(query_errors)
+        )
 
 
 if __name__ == "__main__":

@@ -10,6 +10,7 @@ import time
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 import numpy as np
 import zarr
@@ -29,6 +30,27 @@ class NoSpectralDataError(LookupError):
 
 def _zarr_root() -> Path:
     return Path(os.environ.get("CHRONOSPECTRA_ZARR_ROOT", DEFAULT_ZARR_ROOT)).resolve()
+
+
+def _is_verified_qr3_group(group: zarr.hierarchy.Group) -> bool:
+    attributes = group.attrs
+    if (
+        bool(attributes.get("synthetic", False))
+        or str(attributes.get("release", "")).casefold() != "qr3"
+        or str(attributes.get("archive_collection", "")).casefold()
+        != "spherex_qr3"
+        or not str(attributes.get("archive_product_id", "")).strip()
+    ):
+        return False
+
+    try:
+        access_url = urlsplit(str(attributes.get("archive_access_url", "")))
+    except ValueError:
+        return False
+    return (
+        access_url.scheme == "https"
+        and access_url.hostname == "irsa.ipac.caltech.edu"
+    )
 
 
 def _open_complete_groups(root: Path) -> list[zarr.hierarchy.Group]:
@@ -222,6 +244,9 @@ def get_data_status(zarr_root: Path | None = None) -> dict[str, Any]:
         "target_count": len(target_ids),
         "epochs": sorted(epochs),
         "synthetic_product_count": synthetic_product_count,
+        "verified_product_count": sum(
+            _is_verified_qr3_group(group) for group in groups
+        ),
     }
 
 

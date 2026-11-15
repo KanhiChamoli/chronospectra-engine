@@ -49,4 +49,5 @@ export interface DataStatusResponse {
   target_count: number;
   epochs: string[];
   synthetic_product_count: number;
+  verified_product_count: number;
 }

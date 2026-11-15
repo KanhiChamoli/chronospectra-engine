@@ -61,6 +61,7 @@ class MockQr3GeneratorTests(unittest.TestCase):
             status = get_data_status(root)
             self.assertTrue(status["ready"])
             self.assertEqual(status["synthetic_product_count"], 204)
+            self.assertEqual(status["verified_product_count"], 0)
 
 
 if __name__ == "__main__":
