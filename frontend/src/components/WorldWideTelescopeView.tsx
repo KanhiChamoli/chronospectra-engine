@@ -34,6 +34,17 @@ interface PinPosition {
   top: number;
 }
 
+interface TargetLabelPosition {
+  target: CelestialTarget;
+  left: number;
+  top: number;
+}
+
+interface ScreenPosition {
+  left: number;
+  top: number;
+}
+
 type WWTModule = typeof import("@wwtelescope/engine");
 type SurveyOverlayId = "none" | "wise" | "2mass";
 
@@ -60,6 +71,19 @@ const surveyOverlays: Record<Exclude<SurveyOverlayId, "none">, SurveyOverlay> = 
     baseUrl: "https://irsa.ipac.caltech.edu/data/hips/CDS/2MASS/Color",
   },
 };
+
+function sameProjectedPositions<T extends ScreenPosition>(
+  previous: T[],
+  next: T[],
+  key: (position: T) => string,
+): boolean {
+  return previous.length === next.length && previous.every((position, index) => {
+    const updated = next[index];
+    return key(position) === key(updated) &&
+      Math.abs(position.left - updated.left) < 0.5 &&
+      Math.abs(position.top - updated.top) < 0.5;
+  });
+}
 
 function createHipsImageset(
   engine: WWTModule,
@@ -151,9 +175,13 @@ export function WorldWideTelescopeView({
   const [selectedOverlay, setSelectedOverlay] = useState<SurveyOverlayId>("none");
   const [overlayStatus, setOverlayStatus] = useState("");
   const [pins, setPins] = useState<PinPosition[]>([]);
-  const [targetLabels, setTargetLabels] = useState<Array<{ target: CelestialTarget; left: number; top: number }>>([]);
+  const [targetLabels, setTargetLabels] = useState<TargetLabelPosition[]>([]);
   const [meridianPath, setMeridianPath] = useState("");
   const [overlaySize, setOverlaySize] = useState({ width: 0, height: 0 });
+  const pinsRef = useRef<PinPosition[]>([]);
+  const targetLabelsRef = useRef<TargetLabelPosition[]>([]);
+  const overlaySizeRef = useRef({ width: 0, height: 0 });
+  const meridianPointsRef = useRef<Array<{ x: number; y: number }>>([]);
   const lastFov = useRef("");
   const pointerStart = useRef<{ x: number; y: number } | null>(null);
 
@@ -329,6 +357,7 @@ export function WorldWideTelescopeView({
 
   useEffect(() => {
     const updateTimer = window.setInterval(() => {
+      if (document.visibilityState !== "visible") return;
       const control = controlRef.current;
       const container = containerRef.current;
       const canvas = container?.querySelector("canvas");
@@ -336,7 +365,13 @@ export function WorldWideTelescopeView({
 
       const rect = canvas.getBoundingClientRect();
       if (!rect.width || !rect.height || !canvas.width || !canvas.height) return;
-      setOverlaySize({ width: rect.width, height: rect.height });
+      if (
+        Math.abs(overlaySizeRef.current.width - rect.width) >= 1 ||
+        Math.abs(overlaySizeRef.current.height - rect.height) >= 1
+      ) {
+        overlaySizeRef.current = { width: rect.width, height: rect.height };
+        setOverlaySize(overlaySizeRef.current);
+      }
       const fov = control.renderContext.get_fovAngle();
       const formattedFov = `${fov < 1 ? fov.toFixed(2) : fov.toFixed(1)}°`;
       if (formattedFov !== lastFov.current) {
@@ -366,7 +401,14 @@ export function WorldWideTelescopeView({
           },
         ];
       });
-      setPins(nextPins);
+      if (!sameProjectedPositions(
+        pinsRef.current,
+        nextPins,
+        (position) => `${position.anomaly.target_id}:${position.anomaly.epoch_a}:${position.anomaly.epoch_b}`,
+      )) {
+        pinsRef.current = nextPins;
+        setPins(nextPins);
+      }
       const nextLabels = celestialCatalog
         .filter((target) => target.id !== "sun")
         .map((target) => {
@@ -385,23 +427,48 @@ export function WorldWideTelescopeView({
             top: (point.y / canvas.height) * rect.height,
           };
         })
-        .filter((label): label is { target: CelestialTarget; left: number; top: number } => label !== null);
-      setTargetLabels(nextLabels);
+        .filter((label): label is TargetLabelPosition => label !== null);
+      if (!sameProjectedPositions(
+        targetLabelsRef.current,
+        nextLabels,
+        (position) => position.target.id,
+      )) {
+        targetLabelsRef.current = nextLabels;
+        setTargetLabels(nextLabels);
+      }
       if (viewportSettings.meridianLine && observerLongitude !== null) {
         const julianDate = Date.now() / 86_400_000 + 2_440_587.5;
         const days = julianDate - 2_451_545;
         const gmst = 280.46061837 + 360.98564736629 * days;
         const rightAscension = ((gmst + observerLongitude) % 360 + 360) % 360 / 15;
-        const points = [];
+        const points: Array<{ x: number; y: number }> = [];
         for (let dec = -80; dec <= 80; dec += 5) {
           const point = control.getScreenPointForCoordinates(rightAscension, dec);
           if (Number.isFinite(point.x) && Number.isFinite(point.y)) {
-            points.push(`${(point.x / canvas.width) * rect.width},${(point.y / canvas.height) * rect.height}`);
+            points.push({
+              x: (point.x / canvas.width) * rect.width,
+              y: (point.y / canvas.height) * rect.height,
+            });
           }
         }
-        setMeridianPath(points.length > 1 ? `M ${points.join(" L ")}` : "");
+        const previous = meridianPointsRef.current;
+        const pointsChanged = previous.length !== points.length || previous.some((point, index) =>
+          Math.abs(point.x - points[index].x) >= 0.5 ||
+          Math.abs(point.y - points[index].y) >= 0.5
+        );
+        if (pointsChanged) {
+          meridianPointsRef.current = points;
+          setMeridianPath(
+            points.length > 1
+              ? `M ${points.map(({ x, y }) => `${x},${y}`).join(" L ")}`
+              : "",
+          );
+        }
       } else {
-        setMeridianPath("");
+        if (meridianPointsRef.current.length) {
+          meridianPointsRef.current = [];
+          setMeridianPath("");
+        }
       }
     }, 250);
 

@@ -232,6 +232,16 @@ def verify_turnstile(token: str, remote_ip: str | None) -> None:
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Sign-up verification is not configured. Contact the site administrator.",
         )
+    expected_hostnames = {
+        hostname.strip().lower().rstrip(".")
+        for hostname in os.environ.get("CHRONOSPECTRA_TURNSTILE_HOSTNAMES", "").split(",")
+        if hostname.strip()
+    }
+    if not expected_hostnames:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Sign-up verification hostnames are not configured.",
+        )
     fields = {"secret": secret, "response": token}
     if remote_ip:
         fields["remoteip"] = remote_ip
@@ -251,11 +261,23 @@ def verify_turnstile(token: str, remote_ip: str | None) -> None:
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Could not verify the CAPTCHA right now. Please try again.",
         ) from exc
-    if not isinstance(payload, dict) or payload.get("success") is not True:
+    if not _valid_turnstile_payload(payload, expected_hostnames):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="CAPTCHA verification failed. Please complete it again.",
         )
+
+
+def _valid_turnstile_payload(payload: object, expected_hostnames: set[str]) -> bool:
+    if not isinstance(payload, dict):
+        return False
+    hostname = payload.get("hostname")
+    return (
+        payload.get("success") is True
+        and isinstance(hostname, str)
+        and hostname.lower().rstrip(".") in expected_hostnames
+        and payload.get("action") == "signup"
+    )
 
 
 def send_verification_email(email: str, token: str) -> None:

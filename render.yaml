@@ -1,0 +1,46 @@
+services:
+  - type: web
+    name: chronospectra-api
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeploy: true
+    disk:
+      name: chronospectra-data
+      mountPath: /var/data
+      sizeGB: 10
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: CHRONOSPECTRA_AUTH_DB
+        value: /var/data/chronospectra.sqlite3
+      - key: CHRONOSPECTRA_ZARR_ROOT
+        value: /var/data/processed/zarr
+      - key: CHRONOSPECTRA_COOKIE_SECURE
+        value: "true"
+      - key: CHRONOSPECTRA_COOKIE_SAMESITE
+        value: none
+      - key: CHRONOSPECTRA_CORS_ORIGINS
+        sync: false
+      - key: CHRONOSPECTRA_FRONTEND_URL
+        sync: false
+      - key: CHRONOSPECTRA_TURNSTILE_HOSTNAMES
+        sync: false
+      - key: CHRONOSPECTRA_TURNSTILE_SECRET_KEY
+        sync: false
+      - key: CHRONOSPECTRA_PII_ENCRYPTION_KEY
+        sync: false
+      - key: CHRONOSPECTRA_SMTP_HOST
+        sync: false
+      - key: CHRONOSPECTRA_SMTP_PORT
+        value: "587"
+      - key: CHRONOSPECTRA_SMTP_USER
+        sync: false
+      - key: CHRONOSPECTRA_SMTP_PASSWORD
+        sync: false
+      - key: CHRONOSPECTRA_SMTP_FROM
+        sync: false
+      - key: CHRONOSPECTRA_SMTP_STARTTLS
+        value: "true"

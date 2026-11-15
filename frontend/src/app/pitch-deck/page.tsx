@@ -1,0 +1,129 @@
+"use client";
+
+import Link from "next/link";
+
+const slideFooter = "CHRONOSPECTRA · NASA SPACE APPS · © KANHI CHAMOLI";
+
+export default function PitchDeckPage() {
+  return (
+    <main className="pitch-deck">
+      <header className="pitch-deck-controls">
+        <Link href="/" className="document-back">← Back to the observatory</Link>
+        <button type="button" className="primary-action" onClick={() => window.print()}>
+          Print / Save as PDF
+        </button>
+      </header>
+
+      <article className="pitch-slide pitch-title-slide">
+        <p className="eyebrow">NASA SPACE APPS · PLANET X &amp; SPHEREx</p>
+        <div className="pitch-orbit" aria-hidden="true"><span /></div>
+        <h1>Chronospectra</h1>
+        <p className="pitch-subtitle">A time × wavelength observatory for a changing sky</p>
+        <p className="pitch-slide-number">01 / 06</p>
+        <footer>{slideFooter}</footer>
+      </article>
+
+      <article className="pitch-slide">
+        <p className="eyebrow">THE CHALLENGE</p>
+        <h2>One sky. Many epochs. 102 spectral channels.</h2>
+        <p className="pitch-lead">
+          Comparing astronomical images across time is only the beginning.
+          Chronospectra brings time and near-infrared wavelength into one
+          interactive observing workflow.
+        </p>
+        <div className="pitch-facts">
+          <div><strong>TIME</strong><span>Compare available observation epochs</span></div>
+          <div><strong>WAVELENGTH</strong><span>Inspect measured channels from 0.75–5 μm</span></div>
+          <div><strong>SKY</strong><span>Navigate targets in an interactive WWT viewport</span></div>
+        </div>
+        <p className="pitch-slide-number">02 / 06</p>
+        <footer>{slideFooter}</footer>
+      </article>
+
+      <article className="pitch-slide">
+        <p className="eyebrow">THE DUAL-AXIS MATRIX</p>
+        <h2>See change in both time and color.</h2>
+        <p className="pitch-lead">
+          The horizontal axis selects epochs; the vertical axis selects
+          wavelength. Each cell represents an observed sample, not an
+          interpolated value.
+        </p>
+        <div className="pitch-matrix" aria-label="Illustration of the time by wavelength matrix">
+          <span>μm ↓ / TIME →</span>
+          <b>Epoch A</b><b>Epoch B</b><b>Epoch C</b>
+          <span>0.75</span><i /><i /><i />
+          <span>2.80</span><i /><i className="pitch-highlight" /><i />
+          <span>3.00</span><i /><i className="pitch-highlight" /><i />
+          <span>4.27</span><i /><i /><i className="pitch-highlight" />
+          <span>5.00</span><i /><i /><i />
+        </div>
+        <p className="pitch-caption">
+          Select a measured cell to inspect a wavelength; compare Epoch A and B
+          in the spectrum view.
+        </p>
+        <p className="pitch-slide-number">03 / 06</p>
+        <footer>{slideFooter}</footer>
+      </article>
+
+      <article className="pitch-slide">
+        <p className="eyebrow">SPECTROSCOPY &amp; ANOMALY RADAR</p>
+        <h2>From a sky position to a spectrum—and a lead to inspect.</h2>
+        <div className="pitch-columns">
+          <section>
+            <h3>Pixel-level SED</h3>
+            <p>FastAPI reads detector-level Zarr products and returns the available wavelength, flux, variance, and flags for a coordinate.</p>
+            <p>Epoch curves and annotated absorption regions support visual comparison; the annotations are not molecule detections.</p>
+          </section>
+          <section>
+            <h3>Differential candidates</h3>
+            <p>A variance-based comparison highlights candidate changes and links each result back to its sky position.</p>
+            <p>Candidate scores are screening aids, not confirmed discoveries or causal explanations.</p>
+          </section>
+        </div>
+        <p className="pitch-slide-number">04 / 06</p>
+        <footer>{slideFooter}</footer>
+      </article>
+
+      <article className="pitch-slide">
+        <p className="eyebrow">OPEN ARCHITECTURE</p>
+        <h2>Built to update as public data becomes available.</h2>
+        <div className="pitch-architecture">
+          <span>IRSA SIA2<br /><small>FITS products</small></span>
+          <b aria-hidden="true">→</b>
+          <span>FastAPI ingestion<br /><small>WCS · flags · epochs</small></span>
+          <b aria-hidden="true">→</b>
+          <span>Zarr products<br /><small>coordinate extraction</small></span>
+          <b aria-hidden="true">→</b>
+          <span>Next.js + WWT<br /><small>map · matrix · SED</small></span>
+        </div>
+        <p className="pitch-lead">
+          Vercel hosts the frontend; a persistent FastAPI service handles local
+          data and accounts. Cloudflare R2 is an optional product/tile store:
+          data transferred within Cloudflare has no egress fee, while storage,
+          request, compute, and delivery costs still apply.
+        </p>
+        <p className="pitch-slide-number">05 / 06</p>
+        <footer>{slideFooter}</footer>
+      </article>
+
+      <article className="pitch-slide">
+        <p className="eyebrow">TRANSPARENCY &amp; NEXT STEPS</p>
+        <h2>Clean-room interface. Honest data status.</h2>
+        <ul className="pitch-list">
+          <li>Original observatory UI and components, licensed under MIT; no Stellarium source code or artwork is included.</li>
+          <li>WWT, NASA/IPAC IRSA, Gaia, SIMBAD, and challenge resources are credited separately.</li>
+          <li><strong>Demo values are synthetic—not NASA observations or scientific evidence.</strong></li>
+          <li>The final SIA2 attempt in this environment stopped at the IRSA capabilities endpoint with a proxy HTTP 502; no verified QR3 products were downloaded.</li>
+          <li>Next: retry IRSA when reachable, validate real product coverage, then deploy with production Turnstile, SMTP, secure keys, and persistent storage.</li>
+        </ul>
+        <nav className="pitch-resources" aria-label="Pitch deck resources">
+          <a href="https://irsa.ipac.caltech.edu/Missions/spherex.html" target="_blank" rel="noreferrer">IRSA SPHEREx archive ↗</a>
+          <a href="https://www.spaceappschallenge.org/2026/challenges/planet-x-and-spherex/?tab=resources" target="_blank" rel="noreferrer">Challenge resources ↗</a>
+          <Link href="/credits">Software and data credits</Link>
+        </nav>
+        <p className="pitch-slide-number">06 / 06</p>
+        <footer>{slideFooter}</footer>
+      </article>
+    </main>
+  );
+}

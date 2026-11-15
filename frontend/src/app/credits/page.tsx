@@ -61,6 +61,7 @@ export default function CreditsPage() {
         This project is MIT-licensed. NASA, NASA/IPAC, Gaia, SIMBAD, and WWT are
         credited as data or software resources; no endorsement is implied.
       </p>
+      <p><Link href="/pitch-deck">View and export the Chronospectra pitch deck →</Link></p>
     </main>
   );
 }

@@ -164,7 +164,10 @@ export default function ObservatoryPage() {
       .sort((a, b) => a.wavelength_um - b.wavelength_um),
     [epochA, spectrum],
   );
-  const anomalies = anomalyResponse?.anomalies ?? [];
+  const anomalies = useMemo(
+    () => anomalyResponse?.anomalies ?? [],
+    [anomalyResponse],
+  );
 
   const updateCoordinateUrl = useCallback((raDeg: number, decDeg: number) => {
     const url = new URL(window.location.href);
@@ -271,6 +274,8 @@ export default function ObservatoryPage() {
   }, [showSpectrum, updateCoordinateUrl]);
 
   const selectAnomaly = useCallback((anomaly: Anomaly) => {
+    setSearchText("");
+    setSearchOpen(false);
     updateCoordinateUrl(anomaly.ra_deg, anomaly.dec_deg);
     const knownTarget = celestialCatalog.find((target) => target.id === anomaly.target_id);
     setSelectedObject(knownTarget ?? {
@@ -348,12 +353,26 @@ export default function ObservatoryPage() {
     () => searchCelestialTargets(searchText),
     [searchText],
   );
+  const matchingAnomalies = useMemo(() => {
+    const query = searchText.trim().toLocaleLowerCase();
+    if (!query) return [];
+    return anomalies
+      .filter((anomaly) => anomaly.target_name.toLocaleLowerCase().includes(query))
+      .slice(0, 4);
+  }, [anomalies, searchText]);
 
   return (
     <main className="observatory" data-night-mode={nightMode}>
       <header className="topbar">
         <Link className="brand" href="/" aria-label="Chronospectra home">
-          <span className="brand-mark">C</span>
+          <span className="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="7.5" />
+              <path d="M2.5 15.5C7 6.5 15 4 21.5 9" />
+              <path d="m18.7 6.7 2.8 2.4-3.5.7" />
+              <circle className="brand-star" cx="12" cy="12" r="1.5" />
+            </svg>
+          </span>
           <span>CHRONO<span className="brand-accent">SPECTRA</span></span>
         </Link>
         <form
@@ -361,7 +380,11 @@ export default function ObservatoryPage() {
           role="search"
           onSubmit={(event) => {
             event.preventDefault();
-            if (searchResults[0]) selectTarget(searchResults[0]);
+            if (searchResults[0]) {
+              selectTarget(searchResults[0]);
+            } else if (matchingAnomalies[0]) {
+              selectAnomaly(matchingAnomalies[0]);
+            }
           }}
         >
           <label className="sr-only" htmlFor="celestial-search">Search celestial objects</label>
@@ -370,6 +393,10 @@ export default function ObservatoryPage() {
             id="celestial-search"
             value={searchText}
             onFocus={() => setSearchOpen(true)}
+            role="combobox"
+            aria-expanded={searchOpen && Boolean(searchText.trim())}
+            aria-controls="celestial-search-results"
+            aria-autocomplete="list"
             onChange={(event) => {
               setSearchText(event.target.value);
               setSearchOpen(true);
@@ -381,7 +408,7 @@ export default function ObservatoryPage() {
             autoComplete="off"
           />
           {searchOpen && searchText.trim() && (
-            <div className="search-results" role="listbox" aria-label="Celestial search results">
+            <div id="celestial-search-results" className="search-results" role="listbox" aria-label="Celestial search results">
               {searchResults.map((target) => (
                 <button
                   type="button"
@@ -394,10 +421,7 @@ export default function ObservatoryPage() {
                   <span><strong>{target.name}</strong><small>{target.category} · {target.aliases[0] ?? "ICRS catalog target"}</small></span>
                 </button>
               ))}
-              {anomalies
-                .filter((anomaly) => anomaly.target_name.toLowerCase().includes(searchText.trim().toLowerCase()))
-                .slice(0, 4)
-                .map((anomaly) => (
+              {matchingAnomalies.map((anomaly) => (
                   <button
                     type="button"
                     role="option"
@@ -413,7 +437,7 @@ export default function ObservatoryPage() {
                     <span><strong>{anomaly.target_name}</strong><small>Anomaly candidate · {Math.abs(anomaly.significance).toFixed(1)}σ</small></span>
                   </button>
                 ))}
-              {searchResults.length === 0 && !anomalies.some((anomaly) => anomaly.target_name.toLowerCase().includes(searchText.trim().toLowerCase())) && (
+              {searchResults.length === 0 && matchingAnomalies.length === 0 && (
                 <p className="search-no-results">No matching catalog entry. Search the listed stars and SPHEREx targets.</p>
               )}
             </div>

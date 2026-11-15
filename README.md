@@ -61,6 +61,11 @@ properties document and its HEALPix PNG tiles directly; the optional
 `NEXT_PUBLIC_HIPS_BASE_URL` setting can point to an R2 mirror. Mirroring is an
 explicit storage operation, not part of the FastAPI deployment.
 
+The final live SIA2 ingestion attempt in this checkout (2026-11-15) failed
+while reading IRSA's capabilities endpoint with HTTP 502 from the configured
+network proxy, before any target product query or download. No QR3 data was
+verified or added by that attempt; synthetic products remain demo-only.
+
 ## The Dual-Axis Matrix
 
 The matrix uses time (available observation epochs) for its horizontal axis
@@ -333,16 +338,21 @@ The UI theme uses obsidian `#05050A`, telemetry cyan `#00F0FF`, amber
 controls, charts, dialog, and anomaly list reflow for narrow screens. WWT
 receives touch gestures in its full-size map viewport (`touch-action: none`).
 The chart uses keyboard-accessible native controls and honors reduced-motion
-preferences for pulsing pins.
+preferences for pulsing pins. The sky viewport uses a custom cyan cursor that
+shifts to red in night mode. Projection overlays avoid redundant React updates
+while the sky is stationary and pause their position polling when the tab is
+hidden.
 
 ## Deployment
 
 ### Vercel frontend
 
 1. Import the repository in Vercel and set **Root Directory** to `frontend`.
-2. Keep the framework preset as Next.js. The checked-in `vercel.json` uses
-   `npm install` and `npm run build`.
+2. Keep the framework preset as Next.js. The checked-in `frontend/vercel.json`
+   uses `npm ci` and `npm run build`; no extra rewrite or CORS proxy is needed.
 3. Configure `NEXT_PUBLIC_API_BASE_URL` to the public HTTPS API base URL.
+   Configure `NEXT_PUBLIC_TURNSTILE_SITE_KEY` with the public Cloudflare
+   Turnstile site key.
 4. Optionally set `NEXT_PUBLIC_HIPS_BASE_URL` to the public custom domain for
    the mirrored HiPS tree. These values are public browser configuration; do
    not put secrets in `NEXT_PUBLIC_*`.
@@ -350,6 +360,77 @@ preferences for pulsing pins.
 
 The FastAPI process and the Zarr store need a persistent backend host or mounted
 volume; Vercel does not host this local filesystem API as configured.
+
+### Render FastAPI backend
+
+The root `render.yaml` is a Render Blueprint for a single-instance Docker
+service. It builds `backend/Dockerfile`, checks `/health`, and mounts a 10 GB
+persistent disk at `/var/data`. The image builds the explicitly synthetic demo
+Zarr products separately; at first startup, they are copied onto an empty
+persistent Zarr directory so the demo's SED and anomaly features work without
+claiming to have NASA data. Existing non-empty Zarr storage is never
+overwritten by this seed operation. Back up the disk and plan an explicit
+verified-data migration before replacing demo products. The API-only
+requirements omit the PyTorch,
+IRSA-query, and HEALPix packages that are needed for model development and
+ingestion but not for serving spectra; this reduces deployment build time and
+image size. The monthly ingestion workflow continues to use the full
+`backend/requirements.txt`.
+
+Create the Render Blueprint from the repository root and fill its `sync: false`
+environment variables in the Render dashboard:
+
+| Variable | Value / where to get it |
+| --- | --- |
+| `CHRONOSPECTRA_CORS_ORIGINS` | Exact browser origin(s), e.g. `https://chronospectra.example.org`; comma-separated only if needed. No wildcard. |
+| `CHRONOSPECTRA_FRONTEND_URL` | Full deployed frontend URL, e.g. `https://chronospectra.example.org`. |
+| `CHRONOSPECTRA_TURNSTILE_HOSTNAMES` | Exact hostnames allowed by your Turnstile widget, e.g. `chronospectra.example.org`; no scheme or path. Add preview hostnames only if you intend to accept registrations there. |
+| `CHRONOSPECTRA_TURNSTILE_SECRET_KEY` | Cloudflare Turnstile **secret** key. The frontend receives only the matching site key. Server validation checks the CAPTCHA success, hostname, and `signup` action. |
+| `CHRONOSPECTRA_PII_ENCRYPTION_KEY` | A new Fernet key generated with the command below. Back it up securely; do not rotate without migrating encrypted data. |
+| `CHRONOSPECTRA_SMTP_HOST` | SMTP provider hostname. |
+| `CHRONOSPECTRA_SMTP_USER` / `CHRONOSPECTRA_SMTP_PASSWORD` | SMTP credentials stored as Render secrets. |
+| `CHRONOSPECTRA_SMTP_FROM` | Verified sender address. |
+
+The Blueprint sets `CHRONOSPECTRA_AUTH_DB=/var/data/chronospectra.sqlite3`,
+`CHRONOSPECTRA_ZARR_ROOT=/var/data/processed/zarr`, TLS-secure cookies, and
+SMTP port 587 with STARTTLS. It binds to Render's `$PORT` (falling back to 8000
+for local Docker). Keep this deployment to one API instance while using SQLite
+and its attached disk. The attached volume is not shared across replicas.
+
+For Vercel and Render's default `*.vercel.app` and `*.onrender.com` domains,
+the Blueprint uses `SameSite=None; Secure`; some browsers restrict cross-site
+cookies. For reliable account sessions, attach both services to the same
+registrable domain (for example `app.example.org` and `api.example.org`),
+configure the exact CORS origin, and verify cookies in the target browsers.
+Before horizontal scaling, migrate sessions and observations to a shared
+database such as managed PostgreSQL.
+
+Generate the PII encryption key locally; never commit the output:
+
+```powershell
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+Set these additional **Vercel** variables:
+
+| Variable | Value |
+| --- | --- |
+| `NEXT_PUBLIC_API_BASE_URL` | Render API HTTPS origin, with no trailing path, e.g. `https://chronospectra-api.onrender.com`. |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Cloudflare Turnstile public site key for the production hostname. |
+| `NEXT_PUBLIC_HIPS_BASE_URL` | Optional public HiPS mirror URL; omit it to use the public IRSA URL. |
+
+Set `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and
+`R2_BUCKET` as **GitHub Actions secrets** for the scheduled ingestion workflow,
+not as `NEXT_PUBLIC_*` values. R2 uploads are not automatically synchronized
+to the Render disk: the live API reads local Zarr files. Add a controlled
+download/sync step or an R2-backed Zarr adapter before expecting uploaded
+products to appear in API responses. Keep the R2 bucket private unless you
+have a specific, audited public-serving use case.
+
+The deployment files configure infrastructure only; they do not create
+provider accounts, DNS records, credentials, or live deployments. Review
+Cloudflare Turnstile's domain allowlist, SMTP sender authorization, Vercel
+environment scope, and Render disk persistence before accepting registrations.
 
 ### Recommended hosting layout
 
@@ -377,6 +458,10 @@ volume; Vercel does not host this local filesystem API as configured.
    requests, and only then set `NEXT_PUBLIC_HIPS_BASE_URL`. R2 egress is free
    within Cloudflare, but storage, operations, domain and compute costs can
    still apply.
+
+The celestial search matches catalog names, aliases, and categories, and also
+supports anomaly candidates returned by the API. An empty search does not
+select a default target; pressing Enter selects the first visible match.
 
 ### Challenge-phase status checklist
 

@@ -6,6 +6,22 @@ Notable Chronospectra changes are documented here. Dates use ISO 8601.
 
 ### Added
 
+- Added a Render Docker Blueprint with a mounted persistent disk, a
+  least-dependency API image, health checks, and a production environment
+  variable checklist. Updated Vercel install configuration to use `npm ci`.
+- Added Cloudflare Turnstile server-side checks for the expected hostname and
+  `signup` action, in addition to the successful challenge result.
+- Added an original orbit-and-star Chronospectra mark, cyan/night-red viewport
+  cursors, and a Kanhi Chamoli copyright line in the sidebar footer.
+- Added a six-slide, print-to-PDF pitch deck covering the matrix, architecture,
+  licensing, deployment, and the current synthetic/live-data boundary.
+- Improved empty-query and Enter-key search behavior so an empty search never
+  jumps to the Sun and Enter selects the first catalog or anomaly match.
+- Avoided redundant WWT overlay state updates when projected positions have
+  not visibly changed and paused overlay polling while the page is hidden.
+- Recorded that the final IRSA SIA2 attempt on 2026-11-15 stopped at the
+  capabilities endpoint with a proxy HTTP 502; no verified QR3 products were
+  returned or downloaded.
 - Added a responsive, clean-room sky-explorer layout with catalog/anomaly
   search, target detail cards, persistent viewport labels, live field-of-view
   readout, WWT grid/atmosphere/constellation toggles, ecliptic/meridian guides,
@@ -61,3 +77,6 @@ Notable Chronospectra changes are documented here. Dates use ISO 8601.
   manifest. It does not generate or mirror a complete HiPS tile tree.
 - Generated demo values are not SPHEREx observations and must not be used as
   scientific evidence.
+- The production image seeds the synthetic demo only if the mounted Zarr
+  directory is empty. It does not merge synthetic and real datasets; back up
+  and intentionally replace the data tree when switching to verified products.

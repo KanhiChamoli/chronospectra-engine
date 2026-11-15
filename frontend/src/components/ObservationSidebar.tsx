@@ -97,6 +97,7 @@ export function ObservationSidebar({
           <Link href="/privacy-terms"><span aria-hidden="true"><BookOpen size={15} /></span><span>Privacy &amp; terms</span></Link>
           <a href="https://github.com/kanhichamoli/chronospectra-engine" target="_blank" rel="noreferrer"><span aria-hidden="true"><ExternalLink size={15} /></span><span>About / source</span></a>
         </nav>
+        <small className="sidebar-copyright">© Kanhi Chamoli</small>
       </div>
     </aside>
   );

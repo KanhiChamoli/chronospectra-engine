@@ -125,7 +125,7 @@ export const celestialCatalog: CelestialTarget[] = [
 
 export function searchCelestialTargets(query: string): CelestialTarget[] {
   const normalized = query.trim().toLocaleLowerCase();
-  if (!normalized) return celestialCatalog.slice(0, 5);
+  if (!normalized) return [];
   return celestialCatalog
     .filter((target) =>
       [target.name, ...target.aliases, target.category]

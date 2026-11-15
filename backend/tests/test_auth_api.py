@@ -9,6 +9,7 @@ from cryptography.fernet import Fernet
 from fastapi.testclient import TestClient
 
 from backend.main import app
+from backend.src.auth import _valid_turnstile_payload
 
 
 class AuthApiTests(unittest.TestCase):
@@ -54,6 +55,27 @@ class AuthApiTests(unittest.TestCase):
             json={"token": self.email_mock.call_args.args[1]},
         )
         self.assertEqual(verified.status_code, 200, verified.text)
+
+    def test_turnstile_validation_checks_success_hostname_and_action(self) -> None:
+        valid_payload = {
+            "success": True,
+            "hostname": "app.example.org",
+            "action": "signup",
+        }
+        self.assertTrue(_valid_turnstile_payload(valid_payload, {"app.example.org"}))
+        self.assertFalse(_valid_turnstile_payload(valid_payload, {"other.example.org"}))
+        self.assertFalse(
+            _valid_turnstile_payload(
+                {**valid_payload, "action": "login"},
+                {"app.example.org"},
+            )
+        )
+        self.assertFalse(
+            _valid_turnstile_payload(
+                {**valid_payload, "success": False},
+                {"app.example.org"},
+            )
+        )
 
     def test_registration_requires_consent_and_captcha(self) -> None:
         response = self.client.post(

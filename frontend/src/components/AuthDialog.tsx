@@ -11,6 +11,7 @@ interface TurnstileApi {
     element: HTMLElement,
     options: {
       sitekey: string;
+      action: "signup";
       callback: (token: string) => void;
       "expired-callback": () => void;
       "error-callback": () => void;
@@ -52,6 +53,7 @@ export function AuthDialog({ onClose, onAuthenticated }: AuthDialogProps) {
       if (!active || !window.turnstile || !captchaContainer.current || widgetId.current) return;
       widgetId.current = window.turnstile.render(captchaContainer.current, {
         sitekey: siteKey,
+        action: "signup",
         theme: "dark",
         callback: setCaptchaToken,
         "expired-callback": () => setCaptchaToken(""),
