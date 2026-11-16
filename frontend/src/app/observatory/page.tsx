@@ -244,10 +244,12 @@ function ObservatoryInner() {
   }, []);
 
   const handleFullscreen = useCallback(() => {
+    const viewport = document.querySelector(".wwt-shell");
+    const target = (viewport as HTMLElement | null) ?? document.documentElement;
     if (document.fullscreenElement) {
       void document.exitFullscreen().catch(() => {});
     } else {
-      void document.documentElement.requestFullscreen().catch(() => {});
+      void target.requestFullscreen().catch(() => {});
     }
   }, []);
 
@@ -401,7 +403,7 @@ function ObservatoryInner() {
         <button className={`view-toggle-btn${mainView === "plots" ? " active" : ""}`} onClick={() => setMainView("plots")}>Light Curve & SED Plots</button>
       </div>
 
-      <div className={`workspace ${mainView === "cutout" ? "cutout-layout" : ""}`}>
+      <div className={`workspace ${mainView === "cutout" ? "cutout-layout" : ""} ${sidebarOpen ? "sidebar-open" : ""}`}>
         <section className="sky-section">
           {mainView === "sky" && (
             <>
