@@ -122,3 +122,21 @@ Tracking the discovery-grade SPHEREx multi-epoch blink comparator and astrometri
 - [ ] Diff mode: shift-click to explicitly set reference epoch UI affordance and magenta→red palette toggle refinement
 - [ ] Additional plot variety (phase-folded curves, color-color diagrams, SNR vs wavelength)
 - [ ] Automated UI/E2E smoke tests for preset/tour/plot flows
+## Landing / Home Tab Final Polish (Nov 16, 2026)
+- [x] Constellation art: 64 real Stellarium Western sky-culture drawings (orion, aquila, cassiopeia, cygnus, leo, ursa-major…) saved as transparent PNGs into `frontend/public/constellations/`
+- [x] Cinematic drifting backdrop layers six figures over hero + features + showcase sections (screen blend, cyan glow, 70–120s parallax loops)
+- [x] Attribution added: Stellarium sky-culture artwork credited in `/credits` page
+- [x] Reusable fetch tool: `python backend/tools/fetch_constellation_art.py` (pulls from Stellarium GPL/CC skyculture pack via jsDelivr CDN)
+- [x] SPHEREx interactive CSS-3D satellite model with Orbit View / Inspect Inside / Solar Panels toggles in dedicated landing section
+- [x] Gaia (visible) ⇄ SPHEREx (infrared) all-sky comparison slider — "Same sky, different light." — procedurally generated schematic maps
+- [x] WWT viewport 2D ⇄ 3D tilt toggle with smooth camera tween + snap-back-to-flat behavior
+- [x] Sidebar overlay fix: workspace no longer squished/re-flowed when side menu expands — menu floats over viewport
+- [x] Fullscreen button now fullscreen-targets the WWT viewport (`.wwt-shell:fullscreen`) instead of the whole page
+- [x] Pitch deck page: added "🔭 Back to the viewport" button alongside "← Back to the observatory"
+- [x] Field Guide rebuilt: Cosmo robot mascot (animated waving antenna SVG) + tiered course picker (General 20-topic / Researcher 6-topic) + British-female voice narration retained
+- [x] Keyboard shortcuts fully wired and documented: 1–5 presets, P plots, B blink/cutout, W WWT, S sidebar, H share, T tour, F fullscreen, Space/←→ playback, ? guide, Esc close
+- [x] Landing metrics replaced with honest stats (102 bands / 5 presets / 6 visits / 6 detectors); fake 1,247+ / 89k+ / 2M+ / 15k+ removed; "Read the Paper" removed; "Step into the Observatory" + guided-tour modal wired globally
+
+## Deferred / Future (documented, not blocking)
+- [ ] Live ESA Gaia TAP endpoint direct query (requires backend CORS proxy + credentials); cached/synthetic fallback currently active
+- [ ] Real IRSA QR3 pixel ingestion at scale on Render free tier (currently synthetic generator with documented fallback behavior)
