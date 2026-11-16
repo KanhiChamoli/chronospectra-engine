@@ -65,11 +65,12 @@ interface Particle {
 
 // Constellation art - artistic star patterns displayed throughout the page
 const CONSTELLATION_PNGS = [
-  { src: "/constellations/orion.png", style: { top: "-6%", right: "-4%", width: "34vw", maxWidth: 520, opacity: 0.30, transform: "rotate(-8deg)" } },
-  { src: "/constellations/ursa-major.png", style: { top: "18%", left: "-8%", width: "30vw", maxWidth: 460, opacity: 0.22, transform: "rotate(6deg)" } },
-  { src: "/constellations/cassiopeia.png", style: { bottom: "8%", right: "16%", width: "26vw", maxWidth: 400, opacity: 0.20, transform: "rotate(3deg)" } },
-  { src: "/constellations/cygnus.png", style: { bottom: "-6%", left: "4%", width: "28vw", maxWidth: 430, opacity: 0.18, transform: "rotate(-14deg)" } },
-  { src: "/constellations/lyra.png", style: { top: "36%", left: "38%", width: "16vw", maxWidth: 260, opacity: 0.14, transform: "rotate(10deg)" } },
+  { src: "/constellations/orion.png", style: { top: "-4%", right: "2%", width: "26vw", maxWidth: 400, opacity: 0.5 } },
+  { src: "/constellations/ursa_major.png", style: { top: "16%", left: "-4%", width: "24vw", maxWidth: 360, opacity: 0.42 } },
+  { src: "/constellations/cassiopeia.png", style: { bottom: "6%", right: "18%", width: "20vw", maxWidth: 300, opacity: 0.4 } },
+  { src: "/constellations/cygnus.png", style: { bottom: "-2%", left: "6%", width: "22vw", maxWidth: 320, opacity: 0.38 } },
+  { src: "/constellations/aquila.png", style: { top: "38%", left: "40%", width: "14vw", maxWidth: 210, opacity: 0.32 } },
+  { src: "/constellations/leo.png", style: { top: "6%", left: "30%", width: "15vw", maxWidth: 220, opacity: 0.3 } },
 ];
 
 function ConstellationArt({ variant = "default", className = "" }: { variant?: "default" | "hero" | "wide" | "compact"; className?: string }) {
@@ -132,7 +133,7 @@ function ConstellationArtLayered({ variant = "default", className = "" }: { vari
             src={c.src}
             alt=""
             className="constellation-png"
-            style={{ ...c.style, "--rot": c.style.transform } as unknown as React.CSSProperties}
+            style={c.style as React.CSSProperties}
             loading="lazy"
           />
         ))}

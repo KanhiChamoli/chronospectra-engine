@@ -17,6 +17,11 @@ const credits = [
     url: "https://archive.stsci.edu/missions-and-data/gaia",
   },
   {
+    name: "Stellarium sky culture artwork",
+    description: "Hand-drawn Western constellation art figures used on the landing page (GPL-2+/CC-BY sky-culture pack).",
+    url: "https://github.com/Stellarium/stellarium/tree/master/skycultures",
+  },
+  {
     name: "SIMBAD Astronomical Database",
     description: "Reference database for object names and astronomical identifiers.",
     url: "https://simbad.cds.unistra.fr/simbad/",

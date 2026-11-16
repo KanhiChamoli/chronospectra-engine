@@ -2942,28 +2942,25 @@ h2 {
 .constellation-png {
   position: absolute;
   pointer-events: none;
-  filter: drop-shadow(0 0 18px rgba(0, 229, 255, 0.25));
-  animation: constellation-drift 60s ease-in-out infinite alternate;
-  will-change: transform, opacity;
+  filter: drop-shadow(0 0 14px rgba(0, 229, 255, 0.18)) saturate(0.7);
+  animation: constellation-drift 70s ease-in-out infinite alternate;
+  will-change: transform;
+  mix-blend-mode: screen;
 }
 
 .constellation-png:nth-child(2n) {
-  animation-duration: 84s;
-  animation-delay: -20s;
+  animation-duration: 95s;
+  animation-delay: -25s;
 }
 
 .constellation-png:nth-child(3n) {
-  animation-duration: 110s;
-  animation-delay: -45s;
+  animation-duration: 120s;
+  animation-delay: -55s;
 }
 
 @keyframes constellation-drift {
-  from {
-    transform: translate3d(0, 0, 0) rotate(var(--rot, 0deg));
-  }
-  to {
-    transform: translate3d(2.5vw, -1.5vh, 0) rotate(calc(var(--rot, 0deg) + 2deg));
-  }
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(2vw, -1.2vh, 0); }
 }
 
 /* ── Gaia vs SPHEREx comparison slider ──────────────────── */
