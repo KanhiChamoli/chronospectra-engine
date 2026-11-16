@@ -30,7 +30,7 @@ Tracking the discovery-grade SPHEREx multi-epoch blink comparator and astrometri
 - [x] Unified photometry/spectrum data binding via synthetic generator with detector-separated D1–D6 multi-epoch fluxes tailored per preset spectral class (real IRSA QR3 hook-in ready; graceful fallback)
 
 ## 4. Judge-Ready Onboarding, Presets, URLs & Zero-Login
-- [x] 1-click challenge presets: **Barnard’s Star**, **ε Indi B**, **WISE 0855−0714**, **RW Aurigae**, **R Draconis** (coordinates, descriptions, modes/bands)
+- [x] 1-click challenge presets: **Barnard's Star**, **ε Indi B**, **WISE 0855−0714**, **RW Aurigae**, **R Draconis** (coordinates, descriptions, modes/bands)
 - [x] Deep URL state routing (`?target=&view=&mode=&band=` foundations) and **Share** button (copy exact state URL)
 - [x] Guided tour (20 steps) covering presets, playback, blink/diff/stack, stretch/FoV/bands, overlays, Gaia/PM, candidates, solar system, shift-stack, plots, spectrum, observations, share — with **voice narration (Read Aloud, en-GB/British female preference)**
 - [x] Zero-login friction: **My Observations** saved to `localStorage` immediately (sign-in remains optional in existing auth flows); non-intrusive synthetic/fallback status preserved
@@ -53,6 +53,64 @@ Tracking the discovery-grade SPHEREx multi-epoch blink comparator and astrometri
 - [x] Existing WWT all-sky map, DualAxisMatrix, SED modal (H₂O/CO₂), anomaly tools, and graceful synthetic fallback preserved
 - [x] Frontend production build passes (`next build`)
 - [x] Changes committed and pushed to GitHub
+
+## 8. Landing Page Overhaul & Content Fixes (PENDING)
+- [ ] Remove "Read the Paper" link/button
+- [ ] Replace "30s Demo" → redirect to pitch deck video (verify pitch-deck video URL/target)
+- [ ] Hero headline: replace "Watch the infrared sky change" with cinematic headline; add SPHEREx satellite imagery/video/animation
+- [ ] Rename global CTA to **"Step into the Observatory"**; on click show modal: "Would you like a guided tour of the observatory?" (Yes/No)
+- [ ] Redesign "Made By" card → sleek horizontal rectangle
+- [ ] Fix all text encoding/broken characters (�, ??)
+- [ ] Remove fake metrics (1,247+ Fields Analyzed, 89k+ Live Searches, 2M+ Exposures Processed, 15k+ Shares & Downloads) — replace with genuine project metrics or remove cleanly
+- [ ] Add/restore content sections:
+  - [ ] **Explore the sky with SPHEREx** — RA/Dec inputs, "Open images", challenge targets (Barnard's Star, ε Indi B, WISE 0855, RW Aurigae, R Draconis) with notes (e.g. `WISE 0855 · supplied coordinates`, `J2025.5`)
+  - [ ] **A different way to see the universe** — SPHEREx facts (`102` bands, `6 months`, `6 detectors`) + NASA/IRSA links
+  - [ ] Audience line (students/educators/enthusiasts/citizen scientists) + provenance/limitations note
+  - [ ] **Requested stats block** — `1.6 million public SPHEREx images indexed / 48 cold dwarf candidates measured so far / 382 red sources nobody has checked` (verify genuine or handle per no-fake-data rule)
+  - [ ] **Three scales in one tool** — Solar System, Nearby Stars, Deep Space
+  - [ ] **Same sky, different light** — Gaia vs SPHEREx slider section
+  - [ ] Dedicated constellation-art section (prominent, cinematic/sleek)
+  - [ ] 3D interactive/movable SPHEREx model (inside/solar panels)
+
+## 9. Restore OG UI/Features (PENDING — from af979e7 / pre-baee710)
+- [ ] **ObservationSidebar** wired in `/observatory` with:
+  - [ ] Observations manager (logbook)
+  - [ ] Music controls (play/pause, volume, retro beeps toggle)
+  - [ ] Slide deck access (link to pitch deck)
+  - [ ] Share button (copy URL)
+  - [ ] Keyboard shortcut guide popup/button
+- [ ] **Animated sphere/orbital marker** near "Temporal sky explorer" heading
+- [ ] **Full All-Sky WWT bottom button array**:
+  - [ ] Night Mode toggle
+  - [ ] Constellation Art toggle
+  - [ ] Coordinate Grids toggle
+  - [ ] Footprints/Names/PhotoSky/Lines/Stars/Grid layer toggles with distinct colors
+  - [ ] Scale options
+- [ ] **Original anomaly transition animation** in WWT (click anomaly → smooth animation)
+
+## 10. WWT / Viewport & Interaction Enhancements (PENDING)
+- [ ] **Core Analysis Modes** subsection on WorldWide Telescope integration (smooth viewport, 2.5D access, visualization)
+- [ ] **Discovery section** graphs/charts + active viewport screenshots
+- [ ] **Anomaly/target click modal**: "How would you like to inspect this target? — Open in WorldWide Telescope (WWT) Viewport OR Open 8′ Cutout Inspector & Graphs" (WWT → original smooth animation; do not auto-default to cutout)
+- [ ] Timeline below WWT showing viewport changes
+- [ ] Flat/3D toggle (2D⇄3D snap), fullscreen = whole viewport
+- [ ] Enhanced infrared SPHEREx sky in color
+- [ ] Layers: starlight, dust and gas, both, etc.
+- [ ] URL-queryable coordinates
+- [ ] Display metadata/contamination flags
+- [ ] 102-band creative display / spectra-on-fly / add-subtract visits ideas
+- [ ] Stellarium-like 3D goal
+- [ ] DR1 all-sky map from IRSA in 102 colors + 2MASS/Spitzer/MSX layers
+- [ ] Blink real passes 6 months apart
+- [ ] Export/share PNG or link
+- [ ] 6 languages (i18n)
+
+## 11. Tours / Field Guides (PENDING)
+- [ ] Rename tour → **Field Guide**
+- [ ] Multiple/different guide types (e.g. "Your first journey into reading starlight" general, "Researcher course")
+- [ ] Topics/levels like Apogee reference
+- [ ] Cute robot guide (named) with image
+- [ ] Keep voice/read-aloud guidance (en-GB preference)
 
 ## Follow-ups / Future Enhancements
 - [ ] Live ESA Gaia DR3 TAP queries via backend proxy with caching/rate-limit handling

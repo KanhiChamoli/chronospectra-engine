@@ -19,6 +19,8 @@ interface ObservationSidebarProps {
   onOpenObservation: (observation: Observation) => void;
   onDeleteObservation: (id: number) => void;
   onUpdateNotes: (id: number, notes: string) => void;
+  onShare?: () => void;
+  onOpenShortcuts?: () => void;
 }
 
 export function ObservationSidebar({
@@ -34,6 +36,8 @@ export function ObservationSidebar({
   onOpenObservation,
   onDeleteObservation,
   onUpdateNotes,
+  onShare,
+  onOpenShortcuts,
 }: ObservationSidebarProps) {
   const [notes, setNotes] = useState<Record<number, string>>({});
   const {
@@ -147,6 +151,13 @@ export function ObservationSidebar({
           <a href="https://github.com/kanhichamoli/chronospectra-engine" target="_blank" rel="noreferrer"><span aria-hidden="true"><ExternalLink size={15} /></span><span>About / source</span></a>
         </nav>
         <small className="sidebar-copyright">© Kanhi Chamoli</small>
+        {onShare && (
+          <button className="sidebar-action-btn" onClick={onShare}>🔗 Share Link</button>
+        )}
+        {onOpenShortcuts && (
+          <button className="sidebar-action-btn" onClick={onOpenShortcuts}>⌨ Keyboard Shortcuts</button>
+        )}
+        <a href="/pitch-deck" className="sidebar-action-btn" target="_blank" rel="noopener noreferrer">📊 Pitch Deck</a>
       </div>
     </aside>
   );

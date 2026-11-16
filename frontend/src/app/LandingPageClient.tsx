@@ -348,7 +348,7 @@ function Navigation() {
               <GithubIcon className="w-5 h-5" />
             </a>
             <CTAButton variant="primary" as={Link} href="/observatory">
-              Open the Tool
+              Step into the Observatory
             </CTAButton>
           </div>
 
@@ -376,7 +376,7 @@ function Navigation() {
                 GitHub Repository
               </a>
               <CTAButton variant="primary" className="w-full" as={Link} href="/observatory">
-                Open the Tool
+                Step into the Observatory
               </CTAButton>
             </div>
           </div>
@@ -386,7 +386,7 @@ function Navigation() {
   );
 }
 
-function Hero() {
+function Hero({ onEnter }: { onEnter?: () => void }) {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -412,14 +412,16 @@ function Hero() {
           </div>
 
           <h1 className={`text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-black tracking-tighter text-white leading-tight mb-8 ${loaded ? "animate-fade-in-up" : "opacity-0"} animate-delay-100`}>
-            Watch the infrared sky
+            Explore the dynamic
             <br />
             <span className="relative">
               <span className="relative z-10 bg-gradient-to-r from-cyan-400 via-amber-400 to-cyan-400 bg-clip-text text-transparent animate-shimmer">
-                change
+                infrared universe
               </span>
               <span className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-amber-400 to-cyan-400 blur-2xl opacity-30 -z-10 animate-pulse-slow" />
             </span>
+            <br />
+            across 102 colors
           </h1>
 
           <p className={`text-lg sm:text-xl lg:text-2xl text-gray-300 max-w-3xl mx-auto mb-12 leading-relaxed ${loaded ? "animate-fade-in-up" : "opacity-0"} animate-delay-200`}>
@@ -428,15 +430,12 @@ function Hero() {
           </p>
 
           <div className={`flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 ${loaded ? "animate-fade-in-up" : "opacity-0"} animate-delay-300`}>
-            <CTAButton variant="primary" as={Link} href="/observatory" className="w-full sm:w-auto px-8 py-4 text-base">
-              Open the Tool
+            <CTAButton variant="primary" as={Link} href="/observatory" onClick={onEnter} className="w-full sm:w-auto px-8 py-4 text-base">
+              Step into the Observatory
               <ArrowRight className="w-5 h-5" />
             </CTAButton>
-            <CTAButton variant="ghost" as={Link} href="#paper" className="w-full sm:w-auto px-8 py-4 text-base">
-              Read the Paper
-            </CTAButton>
-            <CTAButton variant="ghost" as={Link} href="#demo" className="w-full sm:w-auto px-8 py-4 text-base">
-              30s Demo
+            <CTAButton variant="ghost" as={Link} href="/pitch-deck" className="w-full sm:w-auto px-8 py-4 text-base">
+              Watch the 30s Demo
             </CTAButton>
           </div>
 
@@ -460,10 +459,10 @@ function Hero() {
 
 function Metrics() {
   const metrics = [
-    { label: "Fields Analyzed", value: 1247, suffix: "+", icon: Target },
-    { label: "Live Searches", value: 89, suffix: "k+", icon: Search },
-    { label: "Exposures Processed", value: 2.3, suffix: "M+", icon: Layers },
-    { label: "Shares & Downloads", value: 15, suffix: "k+", icon: ArrowRight },
+    { label: "Infrared color channels (SPHEREx survey)", value: 102, suffix: "", icon: Layers },
+    { label: "Challenge preset targets, precomputed", value: 5, suffix: "", icon: Target },
+    { label: "Multi-epoch visits per preset field", value: 6, suffix: "", icon: Search },
+    { label: "Detector arrays covered (D1-D6)", value: 6, suffix: "", icon: ArrowRight },
   ];
 
   return (
@@ -495,12 +494,12 @@ function Metrics() {
 
 function ObservatoryShowcase() {
   const capabilities = [
-    { title: "8' Cutout Inspector", desc: "Blink, Diff, and Stack multi-epoch SPHEREx visits at detector-pixel resolution. Watch stars shift across frames with asinh/log/linear stretch.", icon: "??", tag: "New" },
-    { title: "Gaia DR3 Cross-Match", desc: "Real astrometric verification with per-visit residuals, proper-motion vectors in ?/yr, and automatic candidate triage.", icon: "??", tag: "New" },
-    { title: "Light Curves & R=40 Spectra", desc: "Multi-exposure photometry by D1�D6 detectors and inverse-variance binned 102-channel spectra with H2O/CO2 ice markers.", icon: "??", tag: "New" },
-    { title: "Planet X Shift-Stack", desc: "Velocity-aligned coaddition to boost sub-threshold candidates. Drag �/PA sliders and watch SNR snap into focus.", icon: "??", tag: "New" },
-    { title: "Solar System Filter", desc: "SkyBoT/JPL ephemeris checks flag known asteroids and KBOs as false positives before you claim a discovery.", icon: "??", tag: "New" },
-    { title: "Discovery Packets", desc: "Export reproducible JSON+CSV bundles with coordinates, Gaia residuals, photometry, spectra, and shareable deep-links.", icon: "??", tag: "New" },
+    { title: "8' Cutout Inspector", desc: "Blink, Diff, and Stack multi-epoch SPHEREx visits at detector-pixel resolution. Watch stars shift across frames with asinh/log/linear stretch.", icon: "🔭", tag: "New" },
+    { title: "Gaia DR3 Cross-Match", desc: "Real astrometric verification with per-visit residuals, proper-motion vectors in ″/yr, and automatic candidate triage.", icon: "🛰️", tag: "New" },
+    { title: "Light Curves & R=40 Spectra", desc: "Multi-exposure photometry by D1-D6 detectors and inverse-variance binned 102-channel spectra with H2O/CO2 ice markers.", icon: "📈", tag: "New" },
+    { title: "Planet X Shift-Stack", desc: "Velocity-aligned coaddition to boost sub-threshold candidates. Drag µ/PA sliders and watch SNR snap into focus.", icon: "🪐", tag: "New" },
+    { title: "Solar System Filter", desc: "SkyBoT/JPL ephemeris checks flag known asteroids and KBOs as false positives before you claim a discovery.", icon: "☄️", tag: "New" },
+    { title: "Discovery Packets", desc: "Export reproducible JSON+CSV bundles with coordinates, Gaia residuals, photometry, spectra, and shareable deep-links.", icon: "📦", tag: "New" },
   ];
   return (
     <section id="observatory-capabilities" className="relative py-20 lg:py-28 bg-gray-950 overflow-hidden">
@@ -515,7 +514,7 @@ function ObservatoryShowcase() {
             Discovery-grade
             <span className="bg-gradient-to-r from-cyan-400 to-amber-400 bg-clip-text text-transparent"> analysis suite</span>
           </h2>
-          <p className="text-lg text-gray-400">From all-sky browsing to pixel-level cutout inspection, astrometric verification, and reproducible discovery export � all in your browser.</p>
+          <p className="text-lg text-gray-400">From all-sky browsing to pixel-level cutout inspection, astrometric verification, and reproducible discovery export — all in your browser.</p>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {capabilities.map((c) => (
@@ -531,9 +530,9 @@ function ObservatoryShowcase() {
         </div>
         <div className="text-center mt-12">
           <CTAButton variant="primary" as={Link} href="/observatory" className="px-8 py-4 text-base">
-            Open the Observatory <ArrowRight className="w-5 h-5" />
+            Step into the Observatory <ArrowRight className="w-5 h-5" />
           </CTAButton>
-          <p className="text-xs text-gray-500 mt-3">5 challenge presets � 20-step voice-guided tour � no sign-in required</p>
+          <p className="text-xs text-gray-500 mt-3">5 challenge presets · 20-step voice-guided tour · no sign-in required</p>
         </div>
       </div>
     </section>
@@ -1204,11 +1203,12 @@ function Footer() {
 }
 
 export default function LandingPageClient() {
+  const [tourPromptOpen, setTourPromptOpen] = useState(false);
   return (
     <div className="min-h-screen bg-gray-950 text-white font-sans antialiased">
       <Navigation />
       <main>
-        <Hero />
+        <Hero onEnter={() => setTourPromptOpen(true)} />
         <Metrics />
         <ObservatoryShowcase />
         <HowItWorks />
@@ -1217,6 +1217,44 @@ export default function LandingPageClient() {
         <Contact />
       </main>
       <Footer />
+      {tourPromptOpen && <TourPromptModal onClose={() => setTourPromptOpen(false)} />}
+    </div>
+  );
+}
+
+function TourPromptModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-[100] grid place-items-center bg-black/80 backdrop-blur px-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Guided tour"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="w-full max-w-md rounded-2xl border border-cyan-500/40 bg-gray-900/95 p-8 text-center shadow-[0_0_60px_rgba(0,240,255,0.12)]">
+        <div className="mb-4 text-4xl" aria-hidden="true">🛰️</div>
+        <h2 className="mb-2 text-xl font-bold text-white">Would you like a guided tour of the observatory?</h2>
+        <p className="mb-6 text-sm text-gray-400">
+          A 20-step field guide with voice narration walks you through presets, blink playback, Gaia verification and the spectral plots. You can skip it at any time.
+        </p>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Link
+            href="/observatory?tour=1"
+            className="flex-1 rounded-xl bg-cyan-500 px-5 py-3 font-semibold text-gray-950 transition hover:bg-cyan-400"
+          >
+            Yes, show me around
+          </Link>
+          <Link
+            href="/observatory"
+            className="flex-1 rounded-xl border border-gray-700 px-5 py-3 font-semibold text-gray-300 transition hover:border-gray-500 hover:text-white"
+          >
+            No, just explore
+          </Link>
+        </div>
+        <button onClick={onClose} className="mt-4 text-xs text-gray-500 hover:text-gray-300">
+          Cancel
+        </button>
+      </div>
     </div>
   );
 }

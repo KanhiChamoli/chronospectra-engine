@@ -14,6 +14,10 @@ import { GuidedTour } from "@/components/GuidedTour";
 import { DualAxisMatrix } from "@/components/DualAxisMatrix";
 import { SedModal } from "@/components/SedModal";
 import { AnomalyList } from "@/components/AnomalyList";
+import { ObservationSidebar } from "@/components/ObservationSidebar";
+import { ViewportToolbar } from "@/components/ViewportToolbar";
+import { AnomalyInspectModal } from "@/components/AnomalyInspectModal";
+import { KeyboardShortcutGuide } from "@/components/KeyboardShortcutGuide";
 
 
 import { getAnomalies, getDataStatus, getSpectrum } from "@/lib/api";
@@ -85,15 +89,20 @@ function ObservatoryInner() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [selectedObject, setSelectedObject] = useState<CelestialTarget | null>(null);
   const [objectActionStatus, setObjectActionStatus] = useState("");
-  const [viewportSettings] = useState<ViewportSettings>(defaultViewportSettings);
-  const [, setFieldOfView] = useState(0);
-  const [nightMode] = useState(false);
-  const [location] = useState<{ latitude: number; longitude: number; label: string } | null>(null);
+  const [viewportSettings, setViewportSettings] = useState<ViewportSettings>(defaultViewportSettings);
+  const [fieldOfView, setFieldOfView] = useState(0);
+  const [nightMode, setNightMode] = useState(false);
+  const [location, setLocation] = useState<{ latitude: number; longitude: number; label: string } | null>(null);
 
 
   // Local observations (no login required)
   const [localObs, setLocalObs] = useState<LocalObservation[]>([]);
   const spectrumRequest = useRef<AbortController | null>(null);
+
+  const [locationStatus, setLocationStatus] = useState("Requesting location…");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [anomalyInspectTarget, setAnomalyInspectTarget] = useState<{ ra: number; dec: number; name: string; id: string } | null>(null);
 
   // Load local observations + seed community finds
   useEffect(() => {
@@ -116,6 +125,28 @@ function ObservatoryInner() {
       const userOnly = obs.filter((o) => !o.id.startsWith("cs-"));
       localStorage.setItem("chronospectra-observations", JSON.stringify(userOnly));
     } catch {}
+  }, []);
+
+  useEffect(() => {
+    if (!navigator.geolocation) { setLocationStatus("Location not available."); return; }
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        setLocation({ latitude: coords.latitude, longitude: coords.longitude, label: `${coords.latitude.toFixed(3)}°, ${coords.longitude.toFixed(3)}°` });
+        setLocationStatus("");
+      },
+      () => setLocationStatus("Location unavailable · allow access"),
+      { enableHighAccuracy: false, maximumAge: 300_000, timeout: 10_000 }
+    );
+  }, []);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.key === "?") setShortcutsOpen(true);
+      if (e.key === "Escape") { setShortcutsOpen(false); setAnomalyInspectTarget(null); }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
   }, []);
 
   // Load preset data
@@ -197,6 +228,14 @@ function ObservatoryInner() {
     navigator.clipboard.writeText(url).then(() => { setShareMsg("Link copied!"); setTimeout(() => setShareMsg(""), 2000); }).catch(() => { setShareMsg("Copy failed"); setTimeout(() => setShareMsg(""), 2000); });
   }, []);
 
+  const handleFullscreen = useCallback(() => {
+    if (document.fullscreenElement) {
+      void document.exitFullscreen().catch(() => {});
+    } else {
+      void document.documentElement.requestFullscreen().catch(() => {});
+    }
+  }, []);
+
   const handleExportPacket = useCallback(() => {
     if (!activePreset || !photometry) return;
     const packet = {
@@ -260,6 +299,35 @@ function ObservatoryInner() {
 
   return (
     <main className="observatory" data-night-mode={nightMode}>
+      <ObservationSidebar
+        open={sidebarOpen}
+        onToggle={() => setSidebarOpen((v) => !v)}
+        observations={localObs.map((o) => ({
+          id: 0,
+          ra_deg: o.ra,
+          dec_deg: o.dec,
+          target_name: o.name,
+          notes: o.notes,
+          source: "local",
+          created_at: o.savedAt,
+        }))}
+        onOpenObservation={(obs) => {
+          const local = localObs.find((o) => o.name === obs.target_name);
+          const preset = challengePresets.find((p) => p.id === local?.presetId);
+          if (preset) loadPreset(preset);
+          else if (local) { setSelectedTarget({ ra: local.ra, dec: local.dec, name: local.name, id: local.id }); setInitialTarget({ raDeg: local.ra, decDeg: local.dec }); }
+        }}
+        onDeleteObservation={(id) => {
+          void id;
+        }}
+        onUpdateNotes={(id, notes) => {
+          void id;
+          void notes;
+        }}
+        onShare={handleShare}
+        onOpenShortcuts={() => setShortcutsOpen(true)}
+        user={null} loading={false} error={""} onSignIn={() => {}} onSignOut={() => {}} onDeleteAccount={() => {}}
+      />
       <header className="topbar">
         <Link className="brand" href="/" aria-label="Chronospectra home">
           <span className="brand-mark" aria-hidden="true">
@@ -323,14 +391,24 @@ function ObservatoryInner() {
           {mainView === "sky" && (
             <>
               <div className="section-heading">
-                <div><p className="eyebrow">ALL-SKY OBSERVATORY / ICRS</p><h1>Temporal sky explorer</h1></div>
+                <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                  <div><p className="eyebrow">ALL-SKY OBSERVATORY / ICRS</p><h1>Temporal sky explorer</h1></div>
+                  <svg className="temporal-orbit-mark" viewBox="0 0 64 64" aria-hidden="true" width="64" height="64">
+                    <circle className="temporal-orbit-track" cx="32" cy="32" r="22" />
+                    <ellipse className="temporal-orbit-track temporal-orbit-track-tilted" cx="32" cy="32" rx="25" ry="10" transform="rotate(-32 32 32)" />
+                    <circle className="temporal-orbit-core" cx="32" cy="32" r="8" />
+                    <circle className="temporal-orbit-glint" cx="29" cy="29" r="2" />
+                    <g className="temporal-orbit-rotor"><circle className="temporal-orbit-moon" cx="54" cy="32" r="3.5" /></g>
+                  </svg>
+                </div>
                 <span className="data-badge">QR3 DATA STATUS · DR1 HiPS</span>
               </div>
               <WorldWideTelescopeView
                 anomalies={anomalies} hipsBaseUrl={hipsUrl} initialTarget={initialTarget}
                 viewportSettings={viewportSettings} observerLongitude={location?.longitude ?? null}
                 selectedTargetId={selectedObject?.id ?? null} onFieldOfViewChange={setFieldOfView}
-                onSkyClick={selectSkyPosition} onAnomalySelect={(a) => { setSelectedTarget({ ra: a.ra_deg, dec: a.dec_deg, name: a.target_name, id: a.target_id }); void showSpectrum(a.ra_deg, a.dec_deg); }}
+                onSkyClick={selectSkyPosition}
+                onAnomalySelect={(a) => setAnomalyInspectTarget({ ra: a.ra_deg, dec: a.dec_deg, name: a.target_name, id: a.target_id })}
                 onTargetSelect={selectTarget}
               />
             </>
@@ -441,7 +519,51 @@ function ObservatoryInner() {
         <BottomPlotDock photometry={photometry} selectedEpoch={currentEpochId} onEpochSelect={(ep) => { setCurrentEpochId(cutoutEpochs.findIndex((e) => e.id === ep) >= 0 ? ep : currentEpochId); }} />
       )}
 
+      {mainView === "sky" && (
+        <ViewportToolbar
+          settings={viewportSettings}
+          onSettingsChange={setViewportSettings}
+          fieldOfView={fieldOfView ? `${fieldOfView < 1 ? fieldOfView.toFixed(2) : fieldOfView.toFixed(1)}°` : "—"}
+          location={location?.label ?? locationStatus}
+          nightMode={nightMode}
+          onNightModeChange={setNightMode}
+          onFullscreen={handleFullscreen}
+        />
+      )}
       <GuidedTour isOpen={tourOpen} onClose={() => setTourOpen(false)} />
+
+      {anomalyInspectTarget && (
+        <AnomalyInspectModal
+          target={anomalyInspectTarget}
+          onWWT={() => {
+            const a = anomalies.find((x) => x.target_id === anomalyInspectTarget.id);
+            setSelectedTarget({ ra: anomalyInspectTarget.ra, dec: anomalyInspectTarget.dec, name: anomalyInspectTarget.name, id: anomalyInspectTarget.id });
+            if (a) {
+              setSelectedObject({
+                id: `anomaly-${a.target_id}`, name: a.target_name,
+                category: "Differential screening candidate",
+                aliases: [a.target_id], raDeg: a.ra_deg, decDeg: a.dec_deg,
+                summary: a.narrative, source: "Chronospectra epoch comparison",
+              });
+              setInitialTarget({ raDeg: a.ra_deg, decDeg: a.dec_deg });
+              const url = new URL(window.location.href);
+              url.searchParams.set("ra", String(a.ra_deg));
+              url.searchParams.set("dec", String(a.dec_deg));
+              window.history.replaceState(null, "", url);
+            }
+            setAnomalyInspectTarget(null);
+          }}
+          onCutout={() => {
+            const preset = challengePresets.find((p) => Math.abs(p.ra - anomalyInspectTarget.ra) < 0.01) ?? challengePresets.find((p) => p.name.toLowerCase().includes(anomalyInspectTarget.name.toLowerCase().split(" ")[0]));
+            if (preset) { loadPreset(preset); setMainView("cutout"); }
+            else { setMainView("cutout"); }
+            setSelectedTarget({ ra: anomalyInspectTarget.ra, dec: anomalyInspectTarget.dec, name: anomalyInspectTarget.name, id: anomalyInspectTarget.id });
+            void showSpectrum(anomalyInspectTarget.ra, anomalyInspectTarget.dec);
+            setAnomalyInspectTarget(null);
+          }}
+          onClose={() => setAnomalyInspectTarget(null)}
+        />
+      )}
 
       {spectrum && isSedOpen && (
         <SedModal spectrum={spectrum} epochA={epochA} epochB={epochB} selectedWavelength={selectedSamples[selectedIndex]?.wavelength_um ?? null} onClose={() => setIsSedOpen(false)} />

@@ -2624,3 +2624,211 @@ h2 {
 /* Constellation art on landing page */
 .constellation-art-section { position:relative; overflow:hidden; min-height:400px; display:flex; align-items:center; justify-content:center; }
 .constellation-canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+
+/* ── Keyboard shortcut guide ─────────────────────────────── */
+.shortcut-guide-overlay,
+.anomaly-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(2 4 9 / 78%);
+  backdrop-filter: blur(6px);
+}
+
+.shortcut-guide-modal,
+.anomaly-modal {
+  width: min(460px, 100%);
+  padding: 22px;
+  border: 1px solid rgb(0 229 255 / 35%);
+  border-radius: 14px;
+  background: linear-gradient(160deg, rgb(10 16 28 / 97%), rgb(6 10 18 / 97%));
+  box-shadow: 0 24px 80px rgb(0 0 0 / 60%), 0 0 40px rgb(0 229 255 / 8%);
+}
+
+.shortcut-guide-header,
+.anomaly-modal-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.shortcut-guide-header h2 {
+  margin: 0;
+  font-size: 16px;
+  letter-spacing: 0.08em;
+  color: var(--cyan);
+}
+
+.shortcut-guide-header button,
+.anomaly-modal-close {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgb(255 255 255 / 12%);
+  border-radius: 8px;
+  background: transparent;
+  color: #9fb3c8;
+  cursor: pointer;
+}
+
+.shortcut-guide-header button:hover,
+.anomaly-modal-close:hover {
+  border-color: rgb(0 229 255 / 50%);
+  color: var(--cyan);
+}
+
+.shortcut-guide-body {
+  display: grid;
+  gap: 7px;
+  max-height: 55vh;
+  overflow-y: auto;
+}
+
+.shortcut-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 10px;
+  border: 1px solid rgb(255 255 255 / 7%);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 3%);
+}
+
+.shortcut-key {
+  min-width: 64px;
+  padding: 3px 8px;
+  border: 1px solid rgb(0 229 255 / 40%);
+  border-radius: 5px;
+  background: rgb(0 229 255 / 8%);
+  color: var(--cyan);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.shortcut-action {
+  color: #c3cfdb;
+  font-size: 12px;
+}
+
+.shortcut-guide-hint {
+  margin: 14px 0 0;
+  color: #7c8ea1;
+  font-size: 11px;
+}
+
+.shortcut-guide-hint kbd {
+  padding: 1px 6px;
+  border: 1px solid rgb(0 229 255 / 40%);
+  border-radius: 4px;
+  color: var(--cyan);
+}
+
+/* ── Anomaly inspect choice modal ────────────────────────── */
+.anomaly-modal {
+  position: relative;
+  text-align: center;
+}
+
+.anomaly-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+}
+
+.anomaly-modal-title {
+  margin: 0 0 6px;
+  color: #eaf4fb;
+  font-size: 17px;
+  line-height: 1.4;
+}
+
+.anomaly-modal-subtitle {
+  margin: 0 0 18px;
+  color: #7c8ea1;
+  font-family: var(--mono, monospace);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+
+.anomaly-modal-choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 560px) {
+  .anomaly-modal-choices {
+    grid-template-columns: 1fr;
+  }
+}
+
+.anomaly-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  padding: 20px 14px;
+  border: 1px solid rgb(255 255 255 / 12%);
+  border-radius: 12px;
+  background: rgb(255 255 255 / 3%);
+  color: inherit;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.15s, background 0.15s;
+}
+
+.anomaly-choice:hover {
+  transform: translateY(-2px);
+}
+
+.wwt-choice:hover {
+  border-color: rgb(0 229 255 / 60%);
+  background: rgb(0 229 255 / 7%);
+}
+
+.cutout-choice:hover {
+  border-color: rgb(255 183 3 / 60%);
+  background: rgb(255 183 3 / 7%);
+}
+
+.anomaly-choice-icon {
+  font-size: 26px;
+}
+
+.anomaly-choice strong {
+  color: #eaf4fb;
+  font-size: 13px;
+}
+
+.anomaly-choice span:not(.anomaly-choice-icon) {
+  color: #8fa2b5;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.sidebar-action-btn {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  margin-top: 8px;
+  padding: 9px 12px;
+  border: 1px solid rgb(0 229 255 / 28%);
+  border-radius: 9px;
+  background: rgb(0 229 255 / 6%);
+  color: #c9f2fa;
+  font-size: 12px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.sidebar-action-btn:hover {
+  border-color: rgb(0 229 255 / 60%);
+  background: rgb(0 229 255 / 12%);
+}
