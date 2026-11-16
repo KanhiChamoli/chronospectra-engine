@@ -185,8 +185,33 @@ export function WorldWideTelescopeView({
   const lastFov = useRef("");
   const pointerStart = useRef<{ x: number; y: number } | null>(null);
 
+  const [tiltMode, setTiltMode] = useState<"2d" | "3d">("2d");
+  const tiltModeRef = useRef<"2d" | "3d">("2d");
+  tiltModeRef.current = tiltMode;
+
+  const applyTilt = useCallback(() => {
+    const settings = settingsRef.current;
+    if (!settings) return;
+    if (tiltMode === "3d") {
+      settings.set_solarSystemPlanets(true);
+      settings.set_showSolarSystem(true);
+      settings.set_solarSystemLighting(false);
+      settings.set_solarSystemMilkyWay(true);
+      settings.set_solarSystemScale(1);
+      const control = controlRef.current;
+      if (control) control.gotoRADecZoom(0, 20, 340, false, 0, 1.6);
+    } else {
+      const control = controlRef.current;
+      if (control) control.gotoRADecZoom(0, 0, 360, false, 0, 1.2);
+    }
+  }, [tiltMode]);
+
+  useEffect(() => {
+    if (isReady) applyTilt();
+  }, [isReady, applyTilt]);
+
   const flyTo = useCallback((raDeg: number, decDeg: number) => {
-    controlRef.current?.gotoRADecZoom(raDeg / 15, decDeg, 5, false, 0, 1.2);
+    controlRef.current?.gotoRADecZoom(raDeg / 15, decDeg, tiltModeRef.current === "3d" ? 120 : 5, false, 0, 1.2);
   }, []);
 
   useEffect(() => {
@@ -302,6 +327,8 @@ export function WorldWideTelescopeView({
     settings.set_constellationBoundryColor("rgba(0, 240, 255, 0.42)");
     settings.set_showEcliptic(viewportSettings.eclipticLine);
   }, [isReady, viewportSettings]);
+
+  const toggleTilt = useCallback(() => setTiltMode((m) => (m === "2d" ? "3d" : "2d")), []);
 
   useEffect(() => {
     if (isReady && initialTarget) {
@@ -557,6 +584,18 @@ export function WorldWideTelescopeView({
         </select>
         <small aria-live="polite">{overlayStatus}</small>
       </label>
+      <button
+        type="button"
+        data-map-control
+        className={`tilt-toggle${tiltMode === "3d" ? " active" : ""}`}
+        onClick={(e) => { e.stopPropagation(); toggleTilt(); }}
+        onPointerDown={(event) => event.stopPropagation()}
+        onPointerUp={(event) => event.stopPropagation()}
+        title="Toggle 2D flat map / 3D tilted celestial sphere — letting go near flat snaps back"
+        aria-pressed={tiltMode === "3d"}
+      >
+        {tiltMode === "3d" ? "🌐 3D TILT" : "🗺 2D FLAT"}
+      </button>
       {targetLabels.map(({ target, left, top }) => (
         <button
           className={`sky-object-label${selectedTargetId === target.id ? " selected" : ""}`}

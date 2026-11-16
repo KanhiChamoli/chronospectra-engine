@@ -64,6 +64,14 @@ interface Particle {
 
 
 // Constellation art - artistic star patterns displayed throughout the page
+const CONSTELLATION_PNGS = [
+  { src: "/constellations/orion.png", style: { top: "-6%", right: "-4%", width: "34vw", maxWidth: 520, opacity: 0.30, transform: "rotate(-8deg)" } },
+  { src: "/constellations/ursa-major.png", style: { top: "18%", left: "-8%", width: "30vw", maxWidth: 460, opacity: 0.22, transform: "rotate(6deg)" } },
+  { src: "/constellations/cassiopeia.png", style: { bottom: "8%", right: "16%", width: "26vw", maxWidth: 400, opacity: 0.20, transform: "rotate(3deg)" } },
+  { src: "/constellations/cygnus.png", style: { bottom: "-6%", left: "4%", width: "28vw", maxWidth: 430, opacity: 0.18, transform: "rotate(-14deg)" } },
+  { src: "/constellations/lyra.png", style: { top: "36%", left: "38%", width: "16vw", maxWidth: 260, opacity: 0.14, transform: "rotate(10deg)" } },
+];
+
 function ConstellationArt({ variant = "default", className = "" }: { variant?: "default" | "hero" | "wide" | "compact"; className?: string }) {
   const patterns = {
     default: [
@@ -111,6 +119,84 @@ function ConstellationArt({ variant = "default", className = "" }: { variant?: "
         <circle key={`a${i}`} cx={s[0]} cy={s[1]} r={0.3 + (i%2)*0.2} fill={i%3===0?"#ffb703":"#fff"} opacity="0.5" />
       ))}
     </svg>
+  );
+}
+
+function ConstellationArtLayered({ variant = "default", className = "" }: { variant?: "default" | "hero" | "wide" | "compact"; className?: string }) {
+  return (
+    <>
+      <div className="absolute inset-0" aria-hidden="true">
+        {CONSTELLATION_PNGS.map((c) => (
+          <img
+            key={c.src}
+            src={c.src}
+            alt=""
+            className="constellation-png"
+            style={{ ...c.style, "--rot": c.style.transform } as unknown as React.CSSProperties}
+            loading="lazy"
+          />
+        ))}
+      </div>
+      <ConstellationArt variant={variant} className={className} />
+    </>
+  );
+}
+
+function SpherexModel() {
+  const [mode, setMode] = useState<"outside" | "inside" | "panels">("outside");
+  const caption = {
+    outside: "Drag-free orbit view — SPHEREx's three cryogenic telescope tubes sit behind the photon shield.",
+    inside: "Interior view — spectrometer grating arrays and H2–4 K detector columns for the six arrays (D1–D6).",
+    panels: "Solar array configuration — two gallium-ar senide wings track the Sun while the payload stays cold.",
+  }[mode];
+  return (
+    <div className="spherex-scene">
+      <div className={`spherex-model ${mode === "panels" ? "spherex-panels-on" : ""} ${mode === "inside" ? "paused" : ""}`}>
+        <div className={`spherex-bus ${mode === "inside" ? "bus-interior" : ""}`} />
+        <div className="spherex-shield" />
+        <div className="spherex-shield shadow" />
+        <div className="spherex-panel left" />
+        <div className="spherex-panel right" />
+      </div>
+      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0 }}>
+        <div className="spherex-controls">
+          <button className={mode === "outside" ? "active" : ""} onClick={() => setMode("outside")}>Orbit View</button>
+          <button className={mode === "inside" ? "active" : ""} onClick={() => setMode("inside")}>Inspect Inside</button>
+          <button className={mode === "panels" ? "active" : ""} onClick={() => setMode("panels")}>Solar Panels</button>
+        </div>
+        <p className="spherex-caption">{caption}</p>
+      </div>
+    </div>
+  );
+}
+
+function SkyCompare() {
+  const [pos, setPos] = useState(52);
+  const ref = useRef<HTMLDivElement>(null);
+  const dragging = useRef(false);
+
+  const move = (clientX: number) => {
+    const rect = ref.current?.getBoundingClientRect();
+    if (!rect) return;
+    const pct = ((clientX - rect.left) / rect.width) * 100;
+    setPos(Math.min(96, Math.max(4, pct)));
+  };
+
+  return (
+    <div
+      ref={ref}
+      className="sky-compare"
+      onPointerDown={(e) => { dragging.current = true; move(e.clientX); }}
+      onPointerMove={(e) => { if (dragging.current) move(e.clientX); }}
+      onPointerUp={() => { dragging.current = false; }}
+      onPointerLeave={() => { dragging.current = false; }}
+    >
+      <img className="sky-compare-layer" src="/sky/gaia-visible.jpg" alt="Whole sky in visible light (Gaia)" style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }} />
+      <img className="sky-compare-layer" src="/sky/spherex-infrared.jpg" alt="Whole sky in infrared (SPHEREx)" style={{ clipPath: `inset(0 0 0 ${pos}%)` }} />
+      <span className="sky-compare-tag left">GAIA · VISIBLE</span>
+      <span className="sky-compare-tag right">SPHEREx · INFRARED</span>
+      <div className="sky-compare-handle" style={{ left: `${pos}%` }} />
+    </div>
   );
 }
 
@@ -397,6 +483,7 @@ function Hero({ onEnter }: { onEnter?: () => void }) {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16 lg:pt-20">
       <StarfieldBackground />
+      <ConstellationArtLayered variant="hero" />
       <div className="absolute inset-0 bg-gradient-to-b from-gray-950 via-gray-950/50 to-gray-950" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,240,255,0.08),transparent_70%)]" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,183,3,0.05),transparent_50%)]" />
@@ -503,7 +590,7 @@ function ObservatoryShowcase() {
   ];
   return (
     <section id="observatory-capabilities" className="relative py-20 lg:py-28 bg-gray-950 overflow-hidden">
-      <ConstellationArt variant="wide" />
+      <ConstellationArtLayered variant="wide" />
       <div className="absolute inset-0 bg-gradient-to-b from-gray-950/80 via-gray-950/60 to-gray-950/80" />
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
@@ -736,7 +823,7 @@ function Features() {
 
   return (
     <section id="features" className="relative py-20 lg:py-28 bg-gray-950/50 border-y border-gray-800/50 overflow-hidden">
-      <ConstellationArt variant="default" />
+      <ConstellationArtLayered variant="default" />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <Badge className="mb-4" style={{ background: "rgba(255, 183, 3, 0.1)", borderColor: "rgba(255, 183, 3, 0.3)" }}>
@@ -1202,6 +1289,53 @@ function Footer() {
   );
 }
 
+function SameSkyDifferentLight() {
+  return (
+    <section className="relative py-20 lg:py-28 overflow-hidden">
+      <ConstellationArtLayered variant="compact" />
+      <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
+        <Badge className="mb-4" style={{ background: "rgba(255,183,3,0.1)", borderColor: "rgba(255,183,3,0.3)" }}>
+          <Eye className="w-3 h-3" /> Two eyes on one sky
+        </Badge>
+        <h2 className="mb-4 text-3xl font-black tracking-tight text-white sm:text-5xl">
+          Same sky, <span className="bg-gradient-to-r from-sky-200 to-amber-400 bg-clip-text text-transparent">different light.</span>
+        </h2>
+        <p className="mx-auto mb-10 max-w-2xl text-gray-400">
+          On the left, the whole sky as Gaia sees it in visible light; on the right, as SPHEREx sees it in infrared.
+          Slide the handle — cold dust, newborn stars and the galactic core glow far brighter in infrared.
+        </p>
+        <SkyCompare />
+      </div>
+    </section>
+  );
+}
+
+function SpherexModelSection() {
+  return (
+    <section className="relative overflow-hidden py-20 lg:py-28">
+      <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
+        <div>
+          <Badge className="mb-4" style={{ background: "rgba(0,240,255,0.1)", borderColor: "rgba(0,240,255,0.3)" }}>
+            <Sparkles className="h-3 w-3" /> Meet the spacecraft
+          </Badge>
+          <h2 className="mb-4 text-3xl font-black tracking-tight text-white sm:text-4xl">
+            The telescope behind the data
+          </h2>
+          <p className="mb-4 text-gray-400">
+            SPHEREx scans the entire sky in 102 infrared colors from a sun-synchronous orbit,
+            keeping its payload below −210 °C behind three nested photon shields.
+          </p>
+          <p className="text-sm text-gray-500">
+            Schematic model — not to scale. Switch between the orbit view, the detector interior,
+            and the solar array configuration.
+          </p>
+        </div>
+        <SpherexModel />
+      </div>
+    </section>
+  );
+}
+
 export default function LandingPageClient() {
   const [tourPromptOpen, setTourPromptOpen] = useState(false);
   return (
@@ -1212,6 +1346,8 @@ export default function LandingPageClient() {
         <Metrics />
         <ObservatoryShowcase />
         <HowItWorks />
+        <SpherexModelSection />
+        <SameSkyDifferentLight />
         <Features />
         <Team />
         <Contact />

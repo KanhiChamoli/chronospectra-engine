@@ -2911,3 +2911,237 @@ h2 {
   border-color: rgb(0 229 255 / 60%);
   background: rgb(0 229 255 / 12%);
 }
+
+/* ── Constellation PNG cinematic backdrop ───────────────── */
+.constellation-png {
+  position: absolute;
+  pointer-events: none;
+  filter: drop-shadow(0 0 18px rgba(0, 229, 255, 0.25));
+  animation: constellation-drift 60s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+.constellation-png:nth-child(2n) {
+  animation-duration: 84s;
+  animation-delay: -20s;
+}
+
+.constellation-png:nth-child(3n) {
+  animation-duration: 110s;
+  animation-delay: -45s;
+}
+
+@keyframes constellation-drift {
+  from {
+    transform: translate3d(0, 0, 0) rotate(var(--rot, 0deg));
+  }
+  to {
+    transform: translate3d(2.5vw, -1.5vh, 0) rotate(calc(var(--rot, 0deg) + 2deg));
+  }
+}
+
+/* ── Gaia vs SPHEREx comparison slider ──────────────────── */
+.sky-compare {
+  position: relative;
+  width: min(860px, 100%);
+  margin: 0 auto;
+  aspect-ratio: 2 / 1;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgb(0 229 255 / 25%);
+  user-select: none;
+  touch-action: none;
+}
+
+.sky-compare img.sky-compare-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sky-compare-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 3;
+  width: 3px;
+  background: linear-gradient(rgb(0 229 255 / 20%), rgb(0 229 255), rgb(0 229 255 / 20%));
+  cursor: ew-resize;
+}
+
+.sky-compare-handle::before {
+  content: "⇆";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 2px solid rgb(0 229 255);
+  background: rgb(4 10 18 / 88%);
+  color: #00e5ff;
+  font-size: 18px;
+  box-shadow: 0 0 24px rgb(0 229 255 / 45%);
+}
+
+.sky-compare-tag {
+  position: absolute;
+  z-index: 2;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: rgb(4 10 18 / 78%);
+  border: 1px solid rgb(255 255 255 / 15%);
+  color: #eaf4fb;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
+.sky-compare-tag.left { top: 12px; left: 12px; }
+.sky-compare-tag.right { top: 12px; right: 12px; }
+
+/* ── SPHEREx 3D satellite ───────────────────────────────── */
+.spherex-scene {
+  display: grid;
+  place-items: center;
+  min-height: 340px;
+  perspective: 900px;
+}
+
+.spherex-model {
+  position: relative;
+  width: 240px;
+  height: 240px;
+  transform-style: preserve-3d;
+  animation: spherex-spin 24s linear infinite;
+}
+
+.spherex-model.paused {
+  animation-play-state: paused;
+}
+
+@keyframes spherex-spin {
+  from { transform: rotateX(14deg) rotateY(0deg); }
+  to { transform: rotateX(14deg) rotateY(360deg); }
+}
+
+.spherex-bus {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 110px;
+  height: 110px;
+  transform: translate(-50%, -50%) rotateX(90deg);
+  border: 2px solid #00e5ff;
+  border-radius: 14px;
+  background: rgb(0 229 255 / 7%);
+  box-shadow: inset 0 0 22px rgb(0 229 255 / 22%);
+}
+
+.spherex-bus.bus-interior {
+  background:
+    repeating-linear-gradient(0deg, transparent 0 14px, rgb(255 183 3 / 35%) 14px 16px),
+    repeating-linear-gradient(90deg, transparent 0 14px, rgb(0 229 255 / 30%) 14px 16px),
+    rgb(255 183 3 / 6%);
+  border-color: #ffb703;
+}
+
+.spherex-shield {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 150px;
+  height: 150px;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  border: 1.5px solid rgb(0 229 255 / 55%);
+  background: radial-gradient(circle, transparent 42%, rgb(0 229 255 / 12%) 43% 100%);
+}
+
+.spherex-shield.shadow {
+  transform: translate(-50%, -50%) rotateX(78deg) translateZ(46px);
+}
+
+.spherex-panel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 190px;
+  height: 34px;
+  transform-origin: center;
+  border: 1px solid rgb(255 183 3 / 65%);
+  background:
+    repeating-linear-gradient(90deg, rgb(255 183 3 / 14%) 0 22px, transparent 22px 26px),
+    rgb(255 183 3 / 6%);
+  opacity: 0.25;
+  transition: opacity 0.3s, box-shadow 0.3s;
+}
+
+.spherex-panels-on .spherex-panel {
+  opacity: 1;
+  box-shadow: 0 0 26px rgb(255 183 3 / 30%);
+}
+
+.spherex-panel.left { transform: translate(-50%, -50%) rotateX(90deg) rotateZ(8deg) translateX(-155px); }
+.spherex-panel.right { transform: translate(-50%, -50%) rotateX(90deg) rotateZ(-8deg) translateX(155px); }
+
+.spherex-controls {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 18px;
+}
+
+.spherex-controls button {
+  padding: 10px 18px;
+  border: 1px solid rgb(0 229 255 / 40%);
+  border-radius: 10px;
+  background: rgb(0 229 255 / 8%);
+  color: #c9f2fa;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.spherex-controls button:hover,
+.spherex-controls button.active {
+  border-color: rgb(0 229 255);
+  background: rgb(0 229 255 / 18%);
+}
+
+.spherex-caption {
+  margin-top: 12px;
+  text-align: center;
+  color: #8fa2b5;
+  font-size: 12px;
+  min-height: 18px;
+}
+
+/* ── 2D ⇄ 3D tilt toggle ────────────────────────────────── */
+.tilt-toggle {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 5;
+  padding: 8px 14px;
+  border: 1px solid rgb(0 229 255 / 45%);
+  border-radius: 10px;
+  background: rgb(4 10 18 / 82%);
+  color: #c9f2fa;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  backdrop-filter: blur(4px);
+}
+
+.tilt-toggle:hover,
+.tilt-toggle.active {
+  border-color: rgb(0 229 255);
+  background: rgb(0 229 255 / 20%);
+}
