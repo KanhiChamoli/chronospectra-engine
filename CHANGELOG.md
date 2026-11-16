@@ -4,6 +4,16 @@ Notable Chronospectra changes are documented here. Dates use ISO 8601.
 
 ## Unreleased — 2026-11-15
 
+### Discovery-grade observatory upgrade
+
+- Added `/observatory` discovery workspace with view toggles for **All-Sky WWT**, **8′ Cutout Inspector**, and **Light Curve & SED Plots**, preserving existing WWT, DualAxisMatrix, SED modal, anomaly tools, and synthetic-fallback behavior.
+- Implemented multi-epoch cutout comparator with 6-visit timeline, Play/Pause/step/speed controls, **Blink/Diff/Stack** modes (median diff, cyan/red diverging residuals, median coadd), **asinh/log/linear** stretch, FoV/band controls, compass/scale bar, and overlays (Gaia/Flags/Finds/Planet X) with keyboard shortcuts.
+- Added Gaia cross-match/astrometric inspector with per-visit residuals, proper-motion summary (″/yr, PA, baseline shift), candidate triage tags (**Moving/Variable/Very Red/Not in Gaia**) and counts, with cached/synthetic fallback when live services are unavailable.
+- Added bottom plot dock with **Light Curve** (D1–D6, log flux vs UTC, error bars, hollow saturated points, epoch sync) and **R=40 binned 102-channel Spectrum** (raw grey exposures, cyan inverse-variance bins, H₂O/CO₂ markers, visit selector, tooltips).
+- Added **Planet X shift-stack** controls (µ/PA sliders, scan/grid snap, live stacked SNR) and solar-system clearance badge/fallback in inspector; added **Discovery Packet** JSON export (coords, epochs, Gaia/SSO/PM, photometry, R=40 spectrum, share URL).
+- Added 5 challenge presets (Barnard’s Star, ε Indi B, WISE 0855−0714, RW Aur, R Dra), shareable URL state foundations, 20-step **voice-guided tour** (Read Aloud, en-GB preference), localStorage **My Observations** with seeded community finds, and zero-login save flow.
+- Added new responsive landing page with hero/starfield, metrics, feature sections, team/contact/footer, **constellation art throughout the home page**, and observatory capabilities showcase linking to `/observatory`.
+
 ### Pitch-deck demo
 
 - Added a 30-second, 720p product-demo video with a British-English female
