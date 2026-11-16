@@ -10,6 +10,7 @@ export default function PitchDeckPage() {
     <main className="pitch-deck">
       <header className="pitch-deck-controls">
         <Link href="/" className="document-back">← Back to the observatory</Link>
+        <Link href="/observatory" className="document-back">🔭 Back to the viewport</Link>
         <button type="button" className="primary-action" onClick={() => window.print()}>
           Print / Save as PDF
         </button>

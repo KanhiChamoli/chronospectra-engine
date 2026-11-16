@@ -139,16 +139,6 @@ function ObservatoryInner() {
     );
   }, []);
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      if (e.key === "?") setShortcutsOpen(true);
-      if (e.key === "Escape") { setShortcutsOpen(false); setAnomalyInspectTarget(null); }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, []);
-
   // Load preset data
   const loadPreset = useCallback((preset: ChallengePreset) => {
     setActivePreset(preset);
@@ -171,6 +161,31 @@ function ObservatoryInner() {
     url.searchParams.set("view", "cutout");
     window.history.replaceState(null, "", url);
   }, []);
+
+  // Global keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key === "?") { setShortcutsOpen(true); return; }
+      if (e.key === "Escape") { setShortcutsOpen(false); setAnomalyInspectTarget(null); return; }
+      const key = e.key.toLowerCase();
+      if (/^[1-5]$/.test(key)) {
+        const preset = challengePresets[Number(key) - 1];
+        if (preset) loadPreset(preset);
+        return;
+      }
+      if (key === "p") { setMainView((v) => (v === "plots" ? (activePreset ? "cutout" : "sky") : "plots")); return; }
+      if (key === "b") { setMainView("cutout"); return; }
+      if (key === "w") { setMainView("sky"); return; }
+      if (key === "s") { setSidebarOpen((v) => !v); return; }
+      if (key === "h") { void navigator.clipboard?.writeText(window.location.href); return; }
+      if (key === "t") { setTourOpen(true); return; }
+      if (key === "f") { void (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen()); return; }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [loadPreset, activePreset]);
 
   // Handle URL params on load
   useEffect(() => {
@@ -530,6 +545,7 @@ function ObservatoryInner() {
           onFullscreen={handleFullscreen}
         />
       )}
+      <KeyboardShortcutGuide isOpen={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
       <GuidedTour isOpen={tourOpen} onClose={() => setTourOpen(false)} />
 
       {anomalyInspectTarget && (

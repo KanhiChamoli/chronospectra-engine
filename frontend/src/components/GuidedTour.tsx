@@ -38,12 +38,24 @@ interface GuidedTourProps {
   onClose: () => void;
 }
 
+type CourseTier = "choose" | "general" | "researcher";
+
+const RESEARCHER_TOPICS = new Set([
+  "fov-bands", "gaia-check", "stretch", "spectrum-detail", "shift-stack", "solar-system",
+]);
+
 export function GuidedTour({ isOpen, onClose }: GuidedTourProps) {
   const [step, setStep] = useState(0);
   const [speaking, setSpeaking] = useState(false);
+  const [course, setCourse] = useState<CourseTier>("choose");
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
-  const currentStep = tourSteps[step];
+  const activeSteps = course === "researcher"
+    ? tourSteps.filter((s) => RESEARCHER_TOPICS.has(s.id))
+    : tourSteps;
+  const currentStep = activeSteps[step];
+
+  const pickCourse = (tier: CourseTier) => { setCourse(tier); setStep(0); };
 
   const stopSpeaking = useCallback(() => {
     if (typeof window !== "undefined" && window.speechSynthesis) {
@@ -73,31 +85,71 @@ export function GuidedTour({ isOpen, onClose }: GuidedTourProps) {
   }, [stopSpeaking]);
 
   useEffect(() => {
-    if (!isOpen) { stopSpeaking(); setStep(0); }
+    if (!isOpen) { stopSpeaking(); setStep(0); setCourse("choose"); }
   }, [isOpen, stopSpeaking]);
 
   useEffect(() => {
     return () => stopSpeaking();
   }, [stopSpeaking]);
 
-  if (!isOpen || !currentStep) return null;
+  if (!isOpen) return null;
+
+  if (course === "choose") {
+    return (
+      <div className="tour-overlay" onClick={(e) => { if (e.target === e.currentTarget) { onClose(); } }}>
+        <div className="tour-card">
+          <div className="tour-header">
+            <span className="tour-step-count">FIELD GUIDE · COSMO THE ROBOT</span>
+            <button className="tour-close" onClick={onClose}>×</button>
+          </div>
+          <div className="field-guide-mascot" aria-hidden="true">
+            <RobotMascot />
+            <p className="field-guide-greeting">Hi, I&apos;m Cosmo! Pick a course and I&apos;ll walk you through the observatory.</p>
+          </div>
+          <div className="field-guide-courses">
+            <button className="field-guide-course" onClick={() => pickCourse("general")}>
+              <span className="field-guide-icon" aria-hidden="true">✧</span>
+              <strong>General course</strong>
+              <span>From your first sky map to reading graphs of light. No difficult maths — all {tourSteps.length} topics.</span>
+            </button>
+            <button className="field-guide-course" onClick={() => pickCourse("researcher")}>
+              <span className="field-guide-icon" aria-hidden="true">⌁</span>
+              <strong>Researcher course</strong>
+              <span>Check coordinates, raw pixels, wavelength response, uncertainties and a reproducible workflow — {activeSteps.length} focused topics.</span>
+            </button>
+          </div>
+          <button className="tour-btn primary" style={{ width: "100%", marginTop: 14 }} onClick={() => pickCourse("general")}>Start from the beginning →</button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentStep) return null;
 
   return (
     <div className="tour-overlay" onClick={(e) => { if (e.target === e.currentTarget) { onClose(); } }}>
       <div className="tour-card">
         <div className="tour-header">
-          <span className="tour-step-count">Step {step + 1} of {tourSteps.length}</span>
+          <span className="tour-step-count">{course === "researcher" ? "RESEARCHER COURSE" : "GENERAL COURSE"} · Step {step + 1} of {activeSteps.length}</span>
           <button className="tour-close" onClick={onClose}>×</button>
         </div>
-        <h3 className="tour-title">{currentStep.title}</h3>
-        <p className="tour-text">{currentStep.text}</p>
+        <div className="field-guide-mascot inline">
+          <RobotMascot />
+          <div>
+            <h3 className="tour-title">{currentStep.title}</h3>
+            <p className="tour-text">{currentStep.text}</p>
+          </div>
+        </div>
         <div className="tour-controls">
           <button className="tour-btn voice-btn" onClick={() => speaking ? stopSpeaking() : speak(`${currentStep.title}. ${currentStep.text}`)} title="Read aloud (British voice)">
             {speaking ? "⏹ Stop" : "🔊 Read Aloud"}
           </button>
           <div className="tour-nav">
+            {step === 0 && course === "researcher" && (
+              <button className="tour-btn" onClick={() => { stopSpeaking(); setCourse("choose"); }}>Courses</button>
+            )}
             <button className="tour-btn" onClick={() => { stopSpeaking(); setStep(Math.max(0, step - 1)); }} disabled={step === 0}>← Back</button>
-            {step < tourSteps.length - 1 ? (
+            {step < activeSteps.length - 1 ? (
               <button className="tour-btn primary" onClick={() => { stopSpeaking(); setStep(step + 1); }}>Next →</button>
             ) : (
               <button className="tour-btn primary" onClick={onClose}>Finish</button>
@@ -105,11 +157,29 @@ export function GuidedTour({ isOpen, onClose }: GuidedTourProps) {
           </div>
         </div>
         <div className="tour-progress">
-          {tourSteps.map((_, i) => (
+          {activeSteps.map((_, i) => (
             <span key={i} className={`tour-dot${i === step ? " active" : ""}${i < step ? " done" : ""}`} />
           ))}
         </div>
       </div>
     </div>
+  );
+}
+
+function RobotMascot() {
+  return (
+    <svg className="robot-mascot" viewBox="0 0 64 64" aria-hidden="true" width="56" height="56">
+      <rect x="14" y="20" width="36" height="30" rx="10" fill="rgba(0,229,255,0.10)" stroke="#00e5ff" strokeWidth="2.5" />
+      <circle cx="25" cy="34" r="4" fill="#00e5ff" />
+      <circle cx="39" cy="34" r="4" fill="#00e5ff" />
+      <circle cx="26" cy="33" r="1.3" fill="#04101c" />
+      <circle cx="40" cy="33" r="1.3" fill="#04101c" />
+      <path d="M26 43 q6 4 12 0" stroke="#ffb703" strokeWidth="2.2" fill="none" strokeLinecap="round" />
+      <line x1="32" y1="20" x2="32" y2="13" stroke="#00e5ff" strokeWidth="2.2" />
+      <circle cx="32" cy="11" r="3" fill="#ffb703" />
+      <rect x="20" y="52" width="8" height="5" rx="2" fill="rgba(0,229,255,0.35)" />
+      <rect x="36" y="52" width="8" height="5" rx="2" fill="rgba(0,229,255,0.35)" />
+      <path className="robot-antenna-wave" d="M38 8 q4 -3 8 0" stroke="#ffb703" strokeWidth="1.6" fill="none" />
+    </svg>
   );
 }

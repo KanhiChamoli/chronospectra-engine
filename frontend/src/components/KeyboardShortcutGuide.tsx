@@ -2,18 +2,21 @@
 import { X } from "lucide-react";
 
 const shortcuts = [
-  { key: "Space", action: "Play / Pause blink" },
+  { key: "1–5", action: "Load challenge presets (Barnard, ε Indi B, WISE 0855, RW Aur, R Dra)" },
+  { key: "P", action: "Toggle Plots view (light curve + 102-band spectrum)" },
+  { key: "B", action: "Open 8′ Cutout Inspector (blink view)" },
+  { key: "W", action: "Open All-Sky WWT viewport" },
+  { key: "S", action: "Show / hide the side menu" },
+  { key: "H", action: "Share this view (copies deep-link URL)" },
+  { key: "T", action: "Open the guided tour" },
+  { key: "F", action: "Toggle fullscreen viewport" },
+  { key: "Space", action: "Play / Pause blink playback (in cutout view)" },
   { key: "← →", action: "Step to previous / next epoch" },
   { key: "D", action: "Toggle Diff mode" },
-  { key: "B", action: "Toggle Blink mode" },
-  { key: "S", action: "Toggle Stack mode" },
   { key: "G", action: "Show Gaia DR3 overlay" },
-  { key: "F", action: "Toggle contamination flags" },
-  { key: "C", action: "Show community finds" },
+  { key: "C", action: "Show candidate finds" },
   { key: "X", action: "Planet X shift-stack controls" },
-  { key: "P", action: "Switch plots / image view" },
-  { key: "1–5", action: "Load challenge presets (Barnard → R Dra)" },
-  { key: "?", action: "Open keyboard shortcut guide" },
+  { key: "?", action: "Open this keyboard shortcut guide" },
   { key: "Esc", action: "Close modal / clear selection" },
 ];
 
