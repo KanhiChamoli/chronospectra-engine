@@ -3343,7 +3343,94 @@ h2 {
   to { opacity: 1; transform: translate(-50%, 50%) scale(1); }
 }
 
-/* Roman-engraving serif title with gentle tracking-in */
+/* ── Hero copy: persistent DOM, staggered cascade ────────── */
+.hero-copy > div > * {
+  opacity: 0;
+}
+
+.hero-copy.visible .hero-cascade {
+  animation: cascade-in 1.15s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--d, 0) * 220ms);
+}
+
+.hero-copy.visible > div > *:not(.hero-cascade) {
+  opacity: 1;
+}
+
+@keyframes cascade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(22px);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+/* headline gets a slower, wider rise for weight */
+.hero-copy.visible h1.hero-cascade {
+  animation-duration: 1.5s;
+}
+
+/* ── "infrared universe" refined shimmer ─────────────────── */
+.hero-shimmer {
+  background: linear-gradient(
+    100deg,
+    #f4d35e 0%,
+    #e05a47 30%,
+    #f4efea 50%,
+    #e05a47 70%,
+    #f4d35e 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 5s linear infinite;
+  padding-right: 0.06em; /* keep italic-ish serif tail from clipping */
+  filter:
+    drop-shadow(0 0 18px rgba(224, 90, 71, 0.30))
+    drop-shadow(0 0 42px rgba(227, 179, 65, 0.18));
+}
+
+/* ── Star cleanup: sparkle transitions to a settled glow ── */
+.orion-star {
+  transition: opacity 1.6s ease 3.5s; /* fade toward settled state after intro */
+}
+
+.orion-stage.settled .orion-star {
+  opacity: 0.28; /* becomes a quiet steady glow, no longer animating loudly */
+}
+
+.orion-stage.settled .orion-star-core {
+  animation: none;
+  box-shadow:
+    0 0 6px 2px rgba(255, 240, 200, 0.5),
+    0 0 16px 5px rgba(227, 179, 65, 0.25);
+}
+
+.orion-stage.settled .orion-star-ray,
+.orion-stage.settled .orion-star-ring {
+  opacity: 0;
+  transition: opacity 1.2s ease;
+  animation: none;
+}
+
+.orion-star.hidden,
+.orion-nebula-bloom.hidden {
+  display: none;
+}
+
+.orion-nebula-bloom {
+  transition: opacity 1.8s ease 4.5s;
+}
+
+.orion-stage.settled .orion-nebula-bloom {
+  opacity: 0.4;
+}
 .cta-roman {
   background: linear-gradient(135deg, #c84b31 0%, #e05a47 55%, #e3b341 130%);
   border: 1px solid rgba(244, 211, 94, 0.35);
@@ -3373,22 +3460,6 @@ h2 {
   text-shadow:
     0 1px 0 rgba(0, 0, 0, 0.55),
     0 0 48px rgba(227, 179, 65, 0.16);
-  animation: title-arrive 2.2s cubic-bezier(0.19, 1, 0.22, 1) both;
-}
-
-@keyframes title-arrive {
-  0% {
-    opacity: 0;
-    transform: translateY(26px);
-    letter-spacing: 0.06em;
-    filter: blur(8px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-    letter-spacing: 0.01em;
-    filter: blur(0);
-  }
 }
 
 /* mobile: Orion shifts to background above the text */

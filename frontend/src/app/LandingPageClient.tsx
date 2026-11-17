@@ -488,29 +488,23 @@ const ORION_SEQUENCE = {
   kneel: 1600,      // rises/breathes into place
   spark: 2600,      // star begins to sparkle in his palm
   bloom: 3400,      // sparkle blooms into glow
-  title: 4200,      // headline fades up
-  subtitle: 5000,   // paragraph follows
-  cta: 5600,        // buttons appear
+  text: 3600,       // headline cascade begins (staggered per element)
 };
 
 function Hero({ onEnter }: { onEnter?: () => void }) {
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setLoaded(true), 100);
-    return () => clearTimeout(timer);
-  }, []);
-
   const [phase, setPhase] = useState(0);
+  const [settled, setSettled] = useState(false);
+
   useEffect(() => {
     const timers = [
       setTimeout(() => setPhase(1), ORION_SEQUENCE.emerge),
       setTimeout(() => setPhase(2), ORION_SEQUENCE.kneel),
       setTimeout(() => setPhase(3), ORION_SEQUENCE.spark),
       setTimeout(() => setPhase(4), ORION_SEQUENCE.bloom),
-      setTimeout(() => setPhase(5), ORION_SEQUENCE.title),
-      setTimeout(() => setPhase(6), ORION_SEQUENCE.subtitle),
-      setTimeout(() => setPhase(7), ORION_SEQUENCE.cta),
+      setTimeout(() => setPhase(5), ORION_SEQUENCE.text),
+      // once the full sequence has played, settle the star + nebula into
+      // their quiet steady state (loud animations stop, subtle glow remains)
+      setTimeout(() => setSettled(true), ORION_SEQUENCE.bloom + 6500),
     ];
     return () => timers.forEach(clearTimeout);
   }, []);
@@ -521,78 +515,65 @@ function Hero({ onEnter }: { onEnter?: () => void }) {
       {/* cinematic interstellar-style nebula haze */}
       <div className="absolute inset-0 hero-nebula" aria-hidden="true" />
       <ConstellationArtLayered variant="hero" />
-      <div className="absolute inset-0 bg-gradient-to-b from-gray-950/60 via-transparent to-gray-950" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0F1E36]/40 via-transparent to-[#0F1E36]" />
 
-      {/* Orion figure, kneeling on the left, palm star sparkling */}
-      <div className={`orion-stage ${phase >= 1 ? "visible" : ""}`} aria-hidden="true">
+      {/* Orion figure — fixed atmospheric texture; palm star sparkles then settles */}
+      <div className={`orion-stage ${phase >= 1 ? "visible" : ""} ${settled ? "settled" : ""}`} aria-hidden="true">
         <img src="/constellations/orion.png" alt="" className="orion-figure" />
-        {phase >= 3 && (
-          <div className="orion-star">
-            <span className="orion-star-core" />
-            <span className="orion-star-ray ray-1" />
-            <span className="orion-star-ray ray-2" />
-            <span className="orion-star-ring" />
-          </div>
-        )}
-        {phase >= 4 && <div className="orion-nebula-bloom" />}
+        <div className={`orion-star ${phase >= 3 ? "" : "hidden"}`}>
+          <span className="orion-star-core" />
+          <span className="orion-star-ray ray-1" />
+          <span className="orion-star-ray ray-2" />
+          <span className="orion-star-ring" />
+        </div>
+        <div className={`orion-nebula-bloom ${phase >= 4 ? "" : "hidden"}`} />
       </div>
 
-      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
+      <div className={`hero-copy ${phase >= 5 ? "visible" : ""}`} aria-hidden={phase < 5}>
         <div className="max-w-3xl text-left">
-          {phase >= 5 && (
-            <>
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#F3EFEA]/15 bg-[#F3EFEA]/[0.04] backdrop-blur-md text-[#E3B341] text-[11px] font-medium tracking-[0.18em] uppercase mb-7 animate-fade-in-up">
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#E3B341] opacity-75" />
-                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#F4D35E]" />
-                </span>
-                NASA Space Apps Challenge 2026 · SPHEREx Infrared Suite
-              </div>
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#F3EFEA]/15 bg-[#F3EFEA]/[0.04] backdrop-blur-md text-[#E3B341] text-[11px] font-medium tracking-[0.18em] uppercase mb-7 hero-cascade" style={{ "--d": 0 } as React.CSSProperties}>
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#E3B341] opacity-75" />
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#F4D35E]" />
+            </span>
+            NASA Space Apps Challenge 2026 · SPHEREx Infrared Suite
+          </div>
 
-              <h1 className="hero-title text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-semibold uppercase tracking-[0.02em] leading-[1.08] mb-6">
-                Explore the dynamic{" "}
-                <span className="relative inline-block">
-                  <span className="relative z-10 bg-gradient-to-r from-[#F4D35E] via-[#E05A47] to-[#F4D35E] bg-clip-text text-transparent animate-shimmer">
-                    infrared universe
-                  </span>
-                  <span className="absolute inset-0 bg-gradient-to-r from-[#E3B341] via-[#E05A47] to-[#E3B341] blur-2xl opacity-20 -z-10 animate-pulse-slow" />
-                </span>
-              </h1>
-            </>
-          )}
+          <h1 className="hero-title text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-semibold uppercase tracking-[0.02em] leading-[1.08] mb-6 hero-cascade" style={{ "--d": 1 } as React.CSSProperties}>
+            Explore the dynamic{" "}
+            <span className="relative inline-block">
+              <span className="hero-shimmer relative z-10">
+                infrared universe
+              </span>
+            </span>
+          </h1>
 
-          {phase >= 6 && (
-            <p className="font-telemetry text-lg text-[#D5C5A8]/85 max-w-2xl mb-10 leading-relaxed animate-fade-in-up">
-              Align telescope visits across 102 infrared bands, cross-match Gaia DR3 astrometry,
-              and reveal motion, variability, and faint sources hidden in SPHEREx multi-epoch data.
-            </p>
-          )}
+          <p className="font-telemetry text-lg text-[#D5C5A8]/85 max-w-2xl mb-10 leading-relaxed hero-cascade" style={{ "--d": 2 } as React.CSSProperties}>
+            Align telescope visits across 102 infrared bands, cross-match Gaia DR3 astrometry,
+            and reveal motion, variability, and faint sources hidden in SPHEREx multi-epoch data.
+          </p>
 
-          {phase >= 7 && (
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-14 animate-fade-in-up">
-              <CTAButton
-                as={Link}
-                href="/observatory"
-                onClick={onEnter}
-                className="cta-roman w-full sm:w-auto px-8 py-4 text-base"
-              >
-                Open Observatory
-                <ArrowRight className="w-5 h-5" />
-              </CTAButton>
-              <CTAButton variant="ghost" as={Link} href="/pitch-deck" className="w-full sm:w-auto px-8 py-4 text-base">
-                View Demo
-              </CTAButton>
-            </div>
-          )}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-14 hero-cascade" style={{ "--d": 3 } as React.CSSProperties}>
+            <CTAButton
+              as={Link}
+              href="/observatory"
+              onClick={onEnter}
+              className="cta-roman w-full sm:w-auto px-8 py-4 text-base"
+            >
+              Open Observatory
+              <ArrowRight className="w-5 h-5" />
+            </CTAButton>
+            <CTAButton variant="ghost" as={Link} href="/pitch-deck" className="w-full sm:w-auto px-8 py-4 text-base">
+              View Demo
+            </CTAButton>
+          </div>
 
-          {phase >= 7 && (
-            <div className="flex flex-wrap items-center gap-x-8 gap-y-2 font-telemetry-mono text-[11px] tracking-wide text-[#D5C5A8]/60 animate-fade-in-up">
-              <span>0.75–5.0 µm</span>
-              <span>D1–D6</span>
-              <span>Gaia DR3 astrometry</span>
-              <span>Blink · Diff · Shift-stack</span>
-            </div>
-          )}
+          <div className="flex flex-wrap items-center gap-x-8 gap-y-2 font-telemetry-mono text-[11px] tracking-wide text-[#D5C5A8]/60 hero-cascade" style={{ "--d": 4 } as React.CSSProperties}>
+            <span>0.75–5.0 µm</span>
+            <span>D1–D6</span>
+            <span>Gaia DR3 astrometry</span>
+            <span>Blink · Diff · Shift-stack</span>
+          </div>
         </div>
       </div>
 
