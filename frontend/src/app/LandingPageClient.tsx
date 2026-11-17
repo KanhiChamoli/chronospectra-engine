@@ -408,9 +408,9 @@ function Logo({ className = "" }: { className?: string }) {
           <path d="m18.7 6.7 2.8 2.4-3.5.7" />
           <circle className="brand-star" cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
         </svg>
-        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-cyan-400/30 to-transparent animate-pulse" />
+        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-[#E3B341]/30 to-transparent animate-pulse" />
       </div>
-      <span className="font-mono font-black text-xl tracking-wider text-[#F3EFEA]">CHRONO<span className="text-[#48CAE4]">SPECTRA</span></span>
+      <span className="font-mono font-semibold text-xl tracking-wider text-[#F3EFEA]">CHRONO<span className="text-[#48CAE4]">SPECTRA</span></span>
     </Link>
   );
 }
@@ -542,8 +542,8 @@ function Hero({ onEnter }: { onEnter?: () => void }) {
             <>
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#48CAE4]/30 bg-[#48CAE4]/10 text-[#48CAE4] text-sm font-medium mb-8 animate-fade-in-up">
                 <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-400" />
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#E3B341] opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#E3B341]" />
                 </span>
                 NASA Space Apps 2026 Challenge Entry
               </div>
@@ -649,13 +649,13 @@ function ObservatoryShowcase() {
   return (
     <section id="observatory-capabilities" className="relative py-20 lg:py-28 bg-[#0F1E36] overflow-hidden">
       <ConstellationArtLayered variant="wide" />
-      <div className="absolute inset-0 bg-gradient-to-b from-[#0F1E36]/80 via-gray-950/60 to-[#0F1E36]/80" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0F1E36]/80 via-[#0F1E36]/60 to-[#0F1E36]/80" />
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <Badge className="mb-4" style={{ background: "rgba(72,202,228,0.1)", borderColor: "rgba(72,202,228,0.3)" }}>
             <Sparkles className="w-3 h-3" /> Observatory Tools
           </Badge>
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-[#F3EFEA] mb-6">
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-[#F3EFEA] mb-6">
             Discovery-grade
             <span className="bg-gradient-to-r from-[#48CAE4] to-[#E3B341] bg-clip-text text-transparent"> analysis suite</span>
           </h2>
@@ -730,7 +730,7 @@ function HowItWorks() {
           <Badge className="mb-4" style={{ background: "rgba(72, 202, 228, 0.1)", borderColor: "rgba(72, 202, 228, 0.3)" }}>
             <Sparkles className="w-3 h-3" /> How It Works
           </Badge>
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-[#F3EFEA] mb-6">
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-[#F3EFEA] mb-6">
             From photons to
             <span className="bg-gradient-to-r from-[#48CAE4] to-[#E3B341] bg-clip-text text-transparent"> discoveries</span>
             in four steps
@@ -750,7 +750,7 @@ function HowItWorks() {
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-current to-transparent opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: step.color.replace("text-", "") }} />
               <div className="relative flex items-start gap-4">
                 <div className="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: step.bgColor.replace("bg-", "bg-").replace("/10", "/20"), borderColor: step.color.replace("text-", "") }}>
-                  <span className="font-mono font-black text-2xl" style={{ color: step.color.replace("text-", "") }}>{step.number}</span>
+                  <span className="font-mono font-semibold text-2xl" style={{ color: step.color.replace("text-", "") }}>{step.number}</span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-3">
@@ -887,7 +887,7 @@ function Features() {
           <Badge className="mb-4" style={{ background: "rgba(227, 179, 65, 0.1)", borderColor: "rgba(227, 179, 65, 0.3)" }}>
             <Zap className="w-3 h-3" /> Feature Highlights
           </Badge>
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-[#F3EFEA] mb-6">
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-[#F3EFEA] mb-6">
             Tools built for
             <span className="bg-gradient-to-r from-[#E3B341] to-[#48CAE4] bg-clip-text text-transparent"> discovery</span>
           </h2>
@@ -944,7 +944,7 @@ function Team() {
           <Badge className="mb-4" style={{ background: "rgba(227, 179, 65, 0.1)", borderColor: "rgba(227, 179, 65, 0.3)" }}>
             <Users className="w-3 h-3" /> Made By
           </Badge>
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-[#F3EFEA] mb-6">
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-[#F3EFEA] mb-6">
             A mission driven by
             <span className="bg-gradient-to-r from-[#E3B341] to-[#48CAE4] bg-clip-text text-transparent"> curiosity</span>
           </h2>
@@ -961,15 +961,15 @@ function Team() {
 
               <div className="relative flex items-start gap-6">
                 <div className="flex-shrink-0 relative">
-                  <div className="w-24 h-24 lg:w-28 lg:h-28 rounded-2xl bg-gradient-to-br flex items-center justify-center text-4xl lg:text-5xl font-black text-[#0F1E36]" style={{ background: member.gradient }}>
+                  <div className="w-24 h-24 lg:w-28 lg:h-28 rounded-2xl bg-gradient-to-br flex items-center justify-center text-4xl lg:text-5xl font-semibold text-[#0F1E36]" style={{ background: member.gradient }}>
                     K
                   </div>
-                  <div className="absolute -bottom-2 -right-2 w-6 h-6 rounded-full bg-[#48CAE4] border-4 border-gray-900 animate-pulse" />
+                  <div className="absolute -bottom-2 -right-2 w-6 h-6 rounded-full bg-[#48CAE4] border-4 border-[#0F1E36] animate-pulse" />
                 </div>
 
                 <div className="flex-1 min-w-0 pt-2">
                   <div className="flex items-baseline gap-3 mb-3">
-                    <h3 className="text-2xl lg:text-3xl font-black text-[#F3EFEA]">{member.name}</h3>
+                    <h3 className="text-2xl lg:text-3xl font-semibold text-[#F3EFEA]">{member.name}</h3>
                     <span className="px-3 py-1 text-xs font-medium rounded-full bg-[#48CAE4]/15 text-[#48CAE4] border border-[#48CAE4]/30">
                       Grade 10
                     </span>
@@ -1062,7 +1062,7 @@ function Contact() {
             <Badge className="mb-4" style={{ background: "rgba(72, 202, 228, 0.1)", borderColor: "rgba(72, 202, 228, 0.3)" }}>
               <Mail className="w-3 h-3" /> Get In Touch
             </Badge>
-            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-[#F3EFEA] mb-6">
+            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-[#F3EFEA] mb-6">
               Send a
               <span className="bg-gradient-to-r from-[#48CAE4] to-[#E3B341] bg-clip-text text-transparent"> message</span>
             </h2>
@@ -1355,7 +1355,7 @@ function SameSkyDifferentLight() {
         <Badge className="mb-4" style={{ background: "rgba(227,179,65,0.1)", borderColor: "rgba(227,179,65,0.3)" }}>
           <Eye className="w-3 h-3" /> Two eyes on one sky
         </Badge>
-        <h2 className="mb-4 text-3xl font-black tracking-tight text-[#F3EFEA] sm:text-5xl">
+        <h2 className="mb-4 text-3xl font-semibold tracking-tight text-[#F3EFEA] sm:text-5xl">
           Same sky, <span className="bg-gradient-to-r from-sky-200 to-[#E3B341] bg-clip-text text-transparent">different light.</span>
         </h2>
         <p className="mx-auto mb-10 max-w-2xl text-[#F3EFEA]/65">
@@ -1376,7 +1376,7 @@ function SpherexModelSection() {
           <Badge className="mb-4" style={{ background: "rgba(72,202,228,0.1)", borderColor: "rgba(72,202,228,0.3)" }}>
             <Sparkles className="h-3 w-3" /> Meet the spacecraft
           </Badge>
-          <h2 className="mb-4 text-3xl font-black tracking-tight text-[#F3EFEA] sm:text-4xl">
+          <h2 className="mb-4 text-3xl font-semibold tracking-tight text-[#F3EFEA] sm:text-4xl">
             The telescope behind the data
           </h2>
           <p className="mb-4 text-[#F3EFEA]/65">
@@ -1440,7 +1440,7 @@ function TourPromptModal({ onClose }: { onClose: () => void }) {
           </Link>
           <Link
             href="/observatory"
-            className="flex-1 rounded-xl border border-[#F3EFEA]/15 px-5 py-3 font-semibold text-[#F3EFEA]/75 transition hover:border-gray-500 hover:text-[#F3EFEA]"
+            className="flex-1 rounded-xl border border-[#F3EFEA]/15 px-5 py-3 font-semibold text-[#F3EFEA]/75 transition hover:border-[#F3EFEA]/30 hover:text-[#F3EFEA]"
           >
             No, just explore
           </Link>
@@ -1452,4 +1452,5 @@ function TourPromptModal({ onClose }: { onClose: () => void }) {
     </div>
   );
 }
+
 

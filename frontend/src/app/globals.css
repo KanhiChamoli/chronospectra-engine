@@ -68,7 +68,7 @@ html {
 .sidebar-copyright {
   display: block;
   padding: 9px 8px 0;
-  color: #788392;
+  color: rgba(243,239,234,0.5);
   font-size: 8px;
   letter-spacing: 0.02em;
   white-space: nowrap;
@@ -581,14 +581,14 @@ h2 {
   top: 0;
   min-height: 27px;
   border-bottom: 1px solid #29313b;
-  background: #0b0d13;
+  background: rgba(243,239,234,0.03);
 }
 
 .spectral-matrix-axis-label,
 .spectral-matrix-epoch,
 .spectral-matrix-wavelength {
   overflow: hidden;
-  color: #788392;
+  color: rgba(243,239,234,0.5);
   font-size: 8px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -682,7 +682,7 @@ h2 {
 .matrix-note,
 .radar-caveat {
   margin: 14px 0 0;
-  color: #788392;
+  color: rgba(243,239,234,0.5);
   font-size: 9px;
   line-height: 1.6;
 }
@@ -764,7 +764,7 @@ h2 {
 }
 
 .anomaly-story {
-  color: #788392;
+  color: rgba(243,239,234,0.5);
   font-size: 9px;
   line-height: 1.5;
 }
@@ -1099,7 +1099,7 @@ h2 {
 }
 
 .sky-search input::placeholder {
-  color: #788392;
+  color: rgba(243,239,234,0.5);
 }
 
 .search-results {
@@ -1310,7 +1310,7 @@ h2 {
 
 .observation-entry {
   padding: 8px;
-  border: 1px solid #202630;
+  border: 1px solid rgba(244,241,222,0.1);
   border-radius: 6px;
   background: #0d1017;
 }
@@ -1614,7 +1614,7 @@ h2 {
   padding: 8px 10px;
   border: 1px solid var(--line);
   border-radius: 5px;
-  background: #0b0d13;
+  background: rgba(243,239,234,0.03);
   color: var(--cyan);
   font-size: 9px;
 }
@@ -1704,7 +1704,7 @@ h2 {
   padding: 12px;
   border: 1px solid #303744;
   border-radius: 7px;
-  background: #0b0d13;
+  background: rgba(243,239,234,0.03);
   box-shadow: 0 8px 25px rgb(0 0 0 / 45%);
   color: var(--text);
   font-size: 9px;
@@ -1889,8 +1889,8 @@ h2 {
   min-height: 100vh;
   margin: 0 auto;
   padding: 34px 0 80px;
-  color: #bdc7d4;
-  font-family: Arial, sans-serif;
+  color: rgba(243,239,234,0.75);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   font-size: 14px;
   line-height: 1.8;
 }
@@ -3415,6 +3415,7 @@ h2 {
     transition: none;
   }
 }
+
 
 
 
