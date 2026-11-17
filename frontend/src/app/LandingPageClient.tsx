@@ -30,6 +30,15 @@ import {
   Lock,
 } from "lucide-react";
 
+// Load Cormorant Garamond for the Roman-engraving hero title
+const FONT_URL = "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&display=swap";
+if (typeof document !== "undefined" && !document.querySelector(`link[href="${FONT_URL}"]`)) {
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = FONT_URL;
+  document.head.append(link);
+}
+
 const GITHUB_URL = "https://github.com/KanhiChamoli/chronospectra-engine";
 const INSTAGRAM_URL = "https://instagram.com/Kanhi.chamoli";
 const NASA_SPACE_APPS_URL = "https://www.spaceappschallenge.org/2026/challenges/planet-x-and-spherex/";
@@ -473,6 +482,16 @@ function Navigation() {
   );
 }
 
+const ORION_SEQUENCE = {
+  emerge: 600,      // Orion fades in
+  kneel: 1600,      // rises/breathes into place
+  spark: 2600,      // star begins to sparkle in his palm
+  bloom: 3400,      // sparkle blooms into glow
+  title: 4200,      // headline fades up
+  subtitle: 5000,   // paragraph follows
+  cta: 5600,        // buttons appear
+};
+
 function Hero({ onEnter }: { onEnter?: () => void }) {
   const [loaded, setLoaded] = useState(false);
 
@@ -481,58 +500,96 @@ function Hero({ onEnter }: { onEnter?: () => void }) {
     return () => clearTimeout(timer);
   }, []);
 
+  const [phase, setPhase] = useState(0);
+  useEffect(() => {
+    const timers = [
+      setTimeout(() => setPhase(1), ORION_SEQUENCE.emerge),
+      setTimeout(() => setPhase(2), ORION_SEQUENCE.kneel),
+      setTimeout(() => setPhase(3), ORION_SEQUENCE.spark),
+      setTimeout(() => setPhase(4), ORION_SEQUENCE.bloom),
+      setTimeout(() => setPhase(5), ORION_SEQUENCE.title),
+      setTimeout(() => setPhase(6), ORION_SEQUENCE.subtitle),
+      setTimeout(() => setPhase(7), ORION_SEQUENCE.cta),
+    ];
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16 lg:pt-20">
       <StarfieldBackground />
+      {/* cinematic interstellar-style nebula haze */}
+      <div className="absolute inset-0 hero-nebula" aria-hidden="true" />
       <ConstellationArtLayered variant="hero" />
-      <div className="absolute inset-0 bg-gradient-to-b from-gray-950 via-gray-950/50 to-gray-950" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,240,255,0.08),transparent_70%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,183,3,0.05),transparent_50%)]" />
+      <div className="absolute inset-0 bg-gradient-to-b from-gray-950/60 via-transparent to-gray-950" />
 
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
+      {/* Orion figure, kneeling on the left, palm star sparkling */}
+      <div className={`orion-stage ${phase >= 1 ? "visible" : ""}`} aria-hidden="true">
+        <img src="/constellations/orion.png" alt="" className="orion-figure" />
+        {phase >= 3 && (
+          <div className="orion-star">
+            <span className="orion-star-core" />
+            <span className="orion-star-ray ray-1" />
+            <span className="orion-star-ray ray-2" />
+            <span className="orion-star-ring" />
+          </div>
+        )}
+        {phase >= 4 && <div className="orion-nebula-bloom" />}
+      </div>
+
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
         <div className="text-center max-w-4xl mx-auto">
-          <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 text-sm font-medium mb-8 ${loaded ? "animate-fade-in-up" : "opacity-0"}`}>
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-400" />
-            </span>
-            NASA Space Apps 2026 Challenge Entry
-          </div>
+          {phase >= 5 && (
+            <>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 text-sm font-medium mb-8 animate-fade-in-up">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-400" />
+                </span>
+                NASA Space Apps 2026 Challenge Entry
+              </div>
 
-          <h1 className={`text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-black tracking-tighter text-white leading-tight mb-8 ${loaded ? "animate-fade-in-up" : "opacity-0"} animate-delay-100`}>
-            Explore the dynamic
-            <br />
-            <span className="relative">
-              <span className="relative z-10 bg-gradient-to-r from-cyan-400 via-amber-400 to-cyan-400 bg-clip-text text-transparent animate-shimmer">
-                infrared universe
-              </span>
-              <span className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-amber-400 to-cyan-400 blur-2xl opacity-30 -z-10 animate-pulse-slow" />
-            </span>
-            <br />
-            across 102 colors
-          </h1>
+              <h1 className="hero-title text-5xl sm:text-6xl lg:text-7xl xl:text-8xl tracking-tighter leading-tight mb-8">
+                Explore the dynamic
+                <br />
+                <span className="relative">
+                  <span className="relative z-10 bg-gradient-to-r from-cyan-100 via-amber-200 to-cyan-100 bg-clip-text text-transparent animate-shimmer">
+                    infrared universe
+                  </span>
+                  <span className="absolute inset-0 bg-gradient-to-r from-cyan-300 via-amber-300 to-cyan-300 blur-2xl opacity-25 -z-10 animate-pulse-slow" />
+                </span>
+                <br />
+                across 102 colors
+              </h1>
+            </>
+          )}
 
-          <p className={`text-lg sm:text-xl lg:text-2xl text-gray-300 max-w-3xl mx-auto mb-12 leading-relaxed ${loaded ? "animate-fade-in-up" : "opacity-0"} animate-delay-200`}>
-            Aligning telescope visits across 102 infrared colors, detecting motion against Gaia DR3,
-            stacking exposures to reach deeper — revealing the variable and moving universe hidden in SPHEREx data.
-          </p>
+          {phase >= 6 && (
+            <p className="text-lg sm:text-xl lg:text-2xl text-gray-300 max-w-3xl mx-auto mb-12 leading-relaxed animate-fade-in-up">
+              Aligning telescope visits across 102 infrared colors, detecting motion against Gaia DR3,
+              stacking exposures to reach deeper — revealing the variable and moving universe hidden in SPHEREx data.
+            </p>
+          )}
 
-          <div className={`flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 ${loaded ? "animate-fade-in-up" : "opacity-0"} animate-delay-300`}>
-            <CTAButton variant="primary" as={Link} href="/observatory" onClick={onEnter} className="w-full sm:w-auto px-8 py-4 text-base">
-              Step into the Observatory
-              <ArrowRight className="w-5 h-5" />
-            </CTAButton>
-            <CTAButton variant="ghost" as={Link} href="/pitch-deck" className="w-full sm:w-auto px-8 py-4 text-base">
-              Watch the 30s Demo
-            </CTAButton>
-          </div>
+          {phase >= 7 && (
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 animate-fade-in-up">
+              <CTAButton variant="primary" as={Link} href="/observatory" onClick={onEnter} className="w-full sm:w-auto px-8 py-4 text-base">
+                Step into the Observatory
+                <ArrowRight className="w-5 h-5" />
+              </CTAButton>
+              <CTAButton variant="ghost" as={Link} href="/pitch-deck" className="w-full sm:w-auto px-8 py-4 text-base">
+                Watch the 30s Demo
+              </CTAButton>
+            </div>
+          )}
 
-          <div className={`flex flex-wrap items-center justify-center gap-3 text-sm text-gray-500 ${loaded ? "animate-fade-in-up" : "opacity-0"} animate-delay-400`}>
-            <Badge><Lock className="w-3 h-3" /> Free, no sign-up</Badge>
-            <Badge><Smartphone className="w-3 h-3" /> Works on phones</Badge>
-            <Badge><Code className="w-3 h-3" /> Open source</Badge>
-            <Badge><Shield className="w-3 h-3" /> NASA/IPAC IRSA data</Badge>
-          </div>
+          {phase >= 7 && (
+            <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-gray-500 animate-fade-in-up">
+              <Badge><Lock className="w-3 h-3" /> Free, no sign-up</Badge>
+              <Badge><Smartphone className="w-3 h-3" /> Works on phones</Badge>
+              <Badge><Code className="w-3 h-3" /> Open source</Badge>
+              <Badge><Shield className="w-3 h-3" /> NASA/IPAC IRSA data</Badge>
+            </div>
+          )}
         </div>
       </div>
 

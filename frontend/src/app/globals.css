@@ -3168,3 +3168,221 @@ h2 {
   border-color: rgb(0 229 255);
   background: rgb(0 229 255 / 20%);
 }
+
+/* ═══════════════════════════════════════════════════════════
+   CINEMATIC ORION HERO SEQUENCE
+   Interstellar-inspired nebula haze + kneeling Orion figure
+   that opens his palm to a sparkling star, then the title blooms.
+   ═══════════════════════════════════════════ */
+
+.hero-nebula {
+  background:
+    radial-gradient(ellipse 55% 40% at 22% 62%, rgba(64, 120, 200, 0.10), transparent 70%),
+    radial-gradient(ellipse 40% 30% at 78% 30%, rgba(150, 100, 190, 0.07), transparent 70%),
+    radial-gradient(ellipse 30% 22% at 45% 80%, rgba(255, 183, 3, 0.05), transparent 70%),
+    radial-gradient(ellipse 70% 55% at 50% 100%, rgba(6, 10, 20, 0.9), transparent 100%);
+  animation: nebula-breathe 14s ease-in-out infinite alternate;
+}
+
+@keyframes nebula-breathe {
+  from { opacity: 0.75; transform: scale(1); }
+  to { opacity: 1; transform: scale(1.04); }
+}
+
+/* Orion figure stage — kneels on the left, slight rise into place */
+.orion-stage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 46%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 2.4s ease;
+  z-index: 1;
+}
+
+.orion-stage.visible {
+  opacity: 1;
+}
+
+.orion-figure {
+  width: min(34vw, 470px);
+  filter:
+    drop-shadow(0 0 26px rgba(255, 220, 150, 0.28))
+    drop-shadow(0 0 70px rgba(120, 170, 255, 0.14));
+  animation: orion-kneel 3.2s cubic-bezier(0.22, 1, 0.36, 1) forwards,
+    orion-breathe 7s ease-in-out 3.2s infinite alternate;
+}
+
+@keyframes orion-kneel {
+  0% {
+    transform: translateY(9%) scale(0.94);
+    opacity: 0;
+  }
+  55% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes orion-breathe {
+  from { transform: translateY(0) scale(1); }
+  to { transform: translateY(-0.9%) scale(1.008); }
+}
+
+/* the sparkling star in Orion's palm */
+.orion-star {
+  position: absolute;
+  left: 50%;
+  bottom: 34%;
+  width: 8px;
+  height: 8px;
+  transform: translateX(-50%);
+}
+
+.orion-star-core {
+  position: absolute;
+  inset: -3px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow:
+    0 0 8px 2px rgba(255, 248, 220, 0.95),
+    0 0 22px 8px rgba(255, 210, 120, 0.65),
+    0 0 54px 22px rgba(255, 190, 80, 0.28);
+  animation: star-pop 1.1s cubic-bezier(0.2, 1.4, 0.4, 1) forwards,
+    star-twinkle 1.6s ease-in-out 1.1s infinite alternate;
+}
+
+@keyframes star-pop {
+  from { transform: scale(0); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes star-twinkle {
+  from { box-shadow: 0 0 8px 2px rgba(255,248,220,0.9), 0 0 22px 8px rgba(255,210,120,0.6), 0 0 54px 22px rgba(255,190,80,0.25); }
+  to { box-shadow: 0 0 12px 4px rgba(255,248,220,1), 0 0 34px 14px rgba(255,210,120,0.8), 0 0 80px 34px rgba(255,190,80,0.4); }
+}
+
+.orion-star-ray {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 46px;
+  height: 1.4px;
+  background: linear-gradient(90deg, transparent, rgba(255, 240, 200, 0.85), transparent);
+  transform-origin: left center;
+  animation: ray-grow 0.9s ease-out 0.35s both;
+}
+
+.orion-star-ray.ray-1 { transform: translate(-50%, -50%) rotate(0deg); }
+.orion-star-ray.ray-2 { transform: translate(-50%, -50%) rotate(90deg); width: 30px; }
+
+@keyframes ray-grow {
+  from { transform: translate(-50%, -50%) rotate(var(--r, 0deg)) scaleX(0); opacity: 0; }
+  to { transform: translate(-50%, -50%) rotate(var(--r, 0deg)) scaleX(1); opacity: 1; }
+}
+
+.orion-star-ring {
+  position: absolute;
+  inset: -30px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 226, 160, 0.4);
+  animation: ring-ripple 2.2s ease-out 0.5s infinite;
+}
+
+@keyframes ring-ripple {
+  0% { transform: scale(0.35); opacity: 0.9; }
+  100% { transform: scale(1.7); opacity: 0; }
+}
+
+/* faint nebula bloom spreading from the star once it pops */
+.orion-nebula-bloom {
+  position: absolute;
+  left: 50%;
+  bottom: 34%;
+  width: 420px;
+  height: 300px;
+  transform: translate(-50%, 50%);
+  border-radius: 999px;
+  background:
+    radial-gradient(ellipse 60% 55% at 50% 50%, rgba(255, 200, 110, 0.10), transparent 70%),
+    radial-gradient(ellipse 80% 70% at 50% 50%, rgba(90, 140, 220, 0.08), transparent 75%);
+  filter: blur(6px);
+  animation: bloom-in 3s ease-out forwards;
+}
+
+@keyframes bloom-in {
+  from { opacity: 0; transform: translate(-50%, 50%) scale(0.4); }
+  to { opacity: 1; transform: translate(-50%, 50%) scale(1); }
+}
+
+/* Roman-engraving serif title with gentle tracking-in */
+.hero-title {
+  font-family: "Cormorant Garamond", "Garamond", "Georgia", "Times New Roman", serif;
+  font-weight: 600;
+  color: #f5efe2;
+  text-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.6),
+    0 0 42px rgba(255, 220, 150, 0.18),
+    0 0 110px rgba(120, 170, 255, 0.12);
+  letter-spacing: 0.01em;
+  animation: title-arrive 2.2s cubic-bezier(0.19, 1, 0.22, 1) both;
+}
+
+@keyframes title-arrive {
+  0% {
+    opacity: 0;
+    transform: translateY(26px);
+    letter-spacing: 0.06em;
+    filter: blur(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    letter-spacing: 0.01em;
+    filter: blur(0);
+  }
+}
+
+/* mobile: Orion shifts to background above the text */
+@media (max-width: 900px) {
+  .orion-stage {
+    width: 100%;
+    align-items: flex-start;
+    justify-content: flex-end;
+    opacity: 0.32;
+  }
+  .orion-figure {
+    width: min(52vw, 320px);
+    margin-right: -6vw;
+  }
+  .orion-star,
+  .orion-nebula-bloom {
+    display: none;
+  }
+}
+
+/* respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .orion-figure,
+  .hero-nebula,
+  .orion-star-core,
+  .orion-star-ring,
+  .orion-star-ray,
+  .hero-title,
+  .constellation-png {
+    animation: none !important;
+  }
+  .orion-stage,
+  .hero-title {
+    opacity: 1 !important;
+    transition: none;
+  }
+}
