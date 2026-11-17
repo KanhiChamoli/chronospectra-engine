@@ -1,16 +1,25 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
 @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap");
+
+@theme {
+  --font-serif: var(--font-cinzel), ui-serif, Georgia, serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --color-void: #020204;
+  --color-infrared: #ff7b00;
+  --color-cyan: #00f0ff;
+  --color-violet: #9d4edd;
+}
 
 :root {
   color-scheme: dark;
-  --obsidian: #05050a;
+  --obsidian: #020204;
   --panel: #0b0d13;
   --panel-raised: #10131b;
-  --line: #202630;
+  --line: rgba(255, 255, 255, 0.08);
   --muted: #8c96a6;
   --text: #e8edf5;
   --cyan: #00f0ff;
-  --amber: #ffb703;
+  --amber: #ff7b00;
   --danger: #ff647c;
 }
 
@@ -68,13 +77,17 @@ body {
 
 body {
   margin: 0;
-  background:
-    radial-gradient(ellipse at 12% 0%, rgb(0 240 255 / 5%), transparent 34rem),
-    var(--obsidian);
+  background: var(--obsidian);
   color: var(--text);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  font-size: 14px;
+}
+
+.observatory {
   font-family: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   font-size: 13px;
   cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M12 1v6m0 10v6M1 12h6m10 0h6' stroke='%2300f0ff' stroke-width='1.5'/%3E%3Ccircle cx='12' cy='12' r='3' fill='%2300f0ff'/%3E%3C/svg%3E") 12 12, crosshair;
+  background: radial-gradient(ellipse at 12% 0%, rgb(0 240 255 / 5%), transparent 34rem), var(--obsidian);
 }
 
 button,
@@ -2651,7 +2664,7 @@ h2 {
 .constellation-art-section { position:relative; overflow:hidden; min-height:400px; display:flex; align-items:center; justify-content:center; }
 .constellation-canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
 
-/* ── Keyboard shortcut guide ─────────────────────────────── */
+/* â”€â”€ Keyboard shortcut guide â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .shortcut-guide-overlay,
 .anomaly-modal-overlay {
   position: fixed;
@@ -2756,7 +2769,7 @@ h2 {
   color: var(--cyan);
 }
 
-/* ── Anomaly inspect choice modal ────────────────────────── */
+/* â”€â”€ Anomaly inspect choice modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .anomaly-modal {
   position: relative;
   text-align: center;
@@ -2859,7 +2872,7 @@ h2 {
   background: rgb(0 229 255 / 12%);
 }
 
-/* ── Field Guide (tiered tour + mascot) ─────────────────── */
+/* â”€â”€ Field Guide (tiered tour + mascot) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .field-guide-mascot {
   display: flex;
   align-items: center;
@@ -2938,7 +2951,7 @@ h2 {
   background: rgb(0 229 255 / 12%);
 }
 
-/* ── Constellation PNG cinematic backdrop ───────────────── */
+/* â”€â”€ Constellation PNG cinematic backdrop â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .constellation-png {
   position: absolute;
   pointer-events: none;
@@ -2963,7 +2976,7 @@ h2 {
   to { transform: translate3d(2vw, -1.2vh, 0); }
 }
 
-/* ── Gaia vs SPHEREx comparison slider ──────────────────── */
+/* â”€â”€ Gaia vs SPHEREx comparison slider â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .sky-compare {
   position: relative;
   width: min(860px, 100%);
@@ -2995,7 +3008,7 @@ h2 {
 }
 
 .sky-compare-handle::before {
-  content: "⇆";
+  content: "â‡†";
   position: absolute;
   top: 50%;
   left: 50%;
@@ -3027,7 +3040,7 @@ h2 {
 .sky-compare-tag.left { top: 12px; left: 12px; }
 .sky-compare-tag.right { top: 12px; right: 12px; }
 
-/* ── SPHEREx 3D satellite ───────────────────────────────── */
+/* â”€â”€ SPHEREx 3D satellite â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .spherex-scene {
   display: grid;
   place-items: center;
@@ -3144,7 +3157,7 @@ h2 {
   min-height: 18px;
 }
 
-/* ── 2D ⇄ 3D tilt toggle ────────────────────────────────── */
+/* â”€â”€ 2D â‡„ 3D tilt toggle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .tilt-toggle {
   position: absolute;
   top: 12px;
@@ -3169,11 +3182,11 @@ h2 {
   background: rgb(0 229 255 / 20%);
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    CINEMATIC ORION HERO SEQUENCE
    Interstellar-inspired nebula haze + kneeling Orion figure
    that opens his palm to a sparkling star, then the title blooms.
-   ═══════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 .hero-nebula {
   background:
@@ -3189,7 +3202,7 @@ h2 {
   to { opacity: 1; transform: scale(1.04); }
 }
 
-/* Orion figure stage — kneels on the left, slight rise into place */
+/* Orion figure stage â€” kneels on the left, slight rise into place */
 .orion-stage {
   position: absolute;
   left: 0;
@@ -3386,3 +3399,5 @@ h2 {
     transition: none;
   }
 }
+
+
