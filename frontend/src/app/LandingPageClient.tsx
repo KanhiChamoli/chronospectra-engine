@@ -361,7 +361,7 @@ function NavLink({ href, children, external = false, onClick }: { href: string; 
       target={external ? "_blank" : undefined}
       rel={external ? "noopener noreferrer" : undefined}
       onClick={onClick}
-      className="text-sm font-medium text-gray-300 hover:text-cyan-400 transition-colors duration-200 flex items-center gap-1"
+      className="text-sm font-medium text-[#D5C5A8]/90 hover:text-[#F4D35E] transition-colors duration-200 flex items-center gap-1"
     >
       {children}
       {external && <ExternalLink className="w-3 h-3" />}
@@ -381,11 +381,11 @@ function CTAButton({
   className?: string;
   as?: React.ElementType;
 } & Record<string, unknown>) {
-  const baseStyles = "inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-950";
+  const baseStyles = "inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0F1E36]";
   const variants = {
-    primary: "bg-cyan-500 text-gray-950 hover:bg-cyan-400 hover:shadow-[0_0_30px_rgba(0,240,255,0.4)] focus:ring-cyan-500",
-    secondary: "bg-amber-500 text-gray-950 hover:bg-amber-400 hover:shadow-[0_0_30px_rgba(255,183,3,0.4)] focus:ring-amber-500",
-    ghost: "bg-transparent border border-gray-700 text-gray-200 hover:border-cyan-500 hover:text-cyan-400 hover:bg-cyan-500/5 focus:ring-cyan-500",
+    primary: "cta-roman text-white hover:shadow-[0_0_36px_rgba(224,90,71,0.45)] focus:ring-[#C84B31]",
+    secondary: "bg-[#E3B341] text-[#0F1E36] hover:bg-[#F4D35E] hover:shadow-[0_0_30px_rgba(227,179,65,0.4)] focus:ring-[#E3B341]",
+    ghost: "bg-transparent border border-[#F3EFEA]/15 text-[#F3EFEA]/90 backdrop-blur-md hover:border-[#E3B341]/60 hover:text-[#F4D35E] hover:bg-[#E3B341]/5 focus:ring-[#E3B341]",
   };
   return <Component className={`${baseStyles} ${variants[variant]} ${className}`} {...props}>{children}</Component>;
 }
@@ -401,16 +401,17 @@ function Badge({ children, className = "", style, ...props }: { children: React.
 function Logo({ className = "" }: { className?: string }) {
   return (
     <Link href="/" className={`flex items-center gap-3 ${className}`} aria-label="Chronospectra home">
-      <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center overflow-hidden">
-        <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 text-gray-950" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <div className="relative w-10 h-10 rounded-full border border-[#E3B341]/50 flex items-center justify-center">
+        <span className="absolute inset-0 rounded-full bg-[#E3B341]/10 animate-ping" style={{ animationDuration: "2.4s" }} aria-hidden="true" />
+        <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5 text-[#F4D35E]" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="7.5" />
           <path d="M2.5 15.5C7 6.5 15 4 21.5 9" />
           <path d="m18.7 6.7 2.8 2.4-3.5.7" />
           <circle className="brand-star" cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
         </svg>
-        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-cyan-400/30 to-transparent animate-pulse" />
+        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-[#F4D35E]/25 to-transparent animate-pulse" />
       </div>
-      <span className="font-mono font-black text-xl tracking-wider text-white">CHRONO<span className="text-cyan-400">SPECTRA</span></span>
+      <span className="font-editorial text-lg font-semibold tracking-[0.22em] text-[#F3EFEA]">CHRONO<span className="text-[#E3B341]">SPECTRA</span></span>
     </Link>
   );
 }
@@ -426,7 +427,7 @@ function Navigation() {
   }, []);
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? "bg-gray-950/95 backdrop-blur-md border-b border-gray-800" : "bg-transparent"}`}>
+    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? "bg-[#0F1E36]/90 backdrop-blur-md border-b border-[#F3EFEA]/10" : "bg-transparent"}`}>
       <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8" aria-label="Main navigation">
         <div className="flex h-16 lg:h-20 items-center justify-between">
           <Logo />
@@ -440,16 +441,16 @@ function Navigation() {
           </div>
 
           <div className="hidden lg:flex lg:items-center lg:gap-4">
-            <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="p-2 text-gray-400 hover:text-cyan-400 transition-colors" aria-label="GitHub repository">
+            <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="p-2 text-[#D5C5A8]/70 hover:text-[#E3B341] transition-colors" aria-label="GitHub repository">
               <GithubIcon className="w-5 h-5" />
             </a>
             <CTAButton variant="primary" as={Link} href="/observatory">
-              Step into the Observatory
+              Open Observatory
             </CTAButton>
           </div>
 
           <button
-            className="lg:hidden p-2 text-gray-300 hover:text-cyan-400 transition-colors"
+            className="lg:hidden p-2 text-[#D5C5A8] hover:text-[#E3B341] transition-colors"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-expanded={mobileMenuOpen}
             aria-controls="mobile-menu"
@@ -537,57 +538,59 @@ function Hero({ onEnter }: { onEnter?: () => void }) {
       </div>
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
-        <div className="text-center max-w-4xl mx-auto">
+        <div className="max-w-3xl text-left">
           {phase >= 5 && (
             <>
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 text-sm font-medium mb-8 animate-fade-in-up">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-400" />
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#F3EFEA]/15 bg-[#F3EFEA]/[0.04] backdrop-blur-md text-[#E3B341] text-[11px] font-medium tracking-[0.18em] uppercase mb-7 animate-fade-in-up">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#E3B341] opacity-75" />
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#F4D35E]" />
                 </span>
-                NASA Space Apps 2026 Challenge Entry
+                NASA Space Apps Challenge 2026 · SPHEREx Infrared Suite
               </div>
 
-              <h1 className="hero-title text-5xl sm:text-6xl lg:text-7xl xl:text-8xl tracking-tighter leading-tight mb-8">
-                Explore the dynamic
-                <br />
-                <span className="relative">
-                  <span className="relative z-10 bg-gradient-to-r from-cyan-100 via-amber-200 to-cyan-100 bg-clip-text text-transparent animate-shimmer">
+              <h1 className="hero-title text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-semibold uppercase tracking-[0.02em] leading-[1.08] mb-6">
+                Explore the dynamic{" "}
+                <span className="relative inline-block">
+                  <span className="relative z-10 bg-gradient-to-r from-[#F4D35E] via-[#E05A47] to-[#F4D35E] bg-clip-text text-transparent animate-shimmer">
                     infrared universe
                   </span>
-                  <span className="absolute inset-0 bg-gradient-to-r from-cyan-300 via-amber-300 to-cyan-300 blur-2xl opacity-25 -z-10 animate-pulse-slow" />
+                  <span className="absolute inset-0 bg-gradient-to-r from-[#E3B341] via-[#E05A47] to-[#E3B341] blur-2xl opacity-20 -z-10 animate-pulse-slow" />
                 </span>
-                <br />
-                across 102 colors
               </h1>
             </>
           )}
 
           {phase >= 6 && (
-            <p className="text-lg sm:text-xl lg:text-2xl text-gray-300 max-w-3xl mx-auto mb-12 leading-relaxed animate-fade-in-up">
-              Aligning telescope visits across 102 infrared colors, detecting motion against Gaia DR3,
-              stacking exposures to reach deeper — revealing the variable and moving universe hidden in SPHEREx data.
+            <p className="font-telemetry text-lg text-[#D5C5A8]/85 max-w-2xl mb-10 leading-relaxed animate-fade-in-up">
+              Align telescope visits across 102 infrared bands, cross-match Gaia DR3 astrometry,
+              and reveal motion, variability, and faint sources hidden in SPHEREx multi-epoch data.
             </p>
           )}
 
           {phase >= 7 && (
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 animate-fade-in-up">
-              <CTAButton variant="primary" as={Link} href="/observatory" onClick={onEnter} className="w-full sm:w-auto px-8 py-4 text-base">
-                Step into the Observatory
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-14 animate-fade-in-up">
+              <CTAButton
+                as={Link}
+                href="/observatory"
+                onClick={onEnter}
+                className="cta-roman w-full sm:w-auto px-8 py-4 text-base"
+              >
+                Open Observatory
                 <ArrowRight className="w-5 h-5" />
               </CTAButton>
               <CTAButton variant="ghost" as={Link} href="/pitch-deck" className="w-full sm:w-auto px-8 py-4 text-base">
-                Watch the 30s Demo
+                View Demo
               </CTAButton>
             </div>
           )}
 
           {phase >= 7 && (
-            <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-gray-500 animate-fade-in-up">
-              <Badge><Lock className="w-3 h-3" /> Free, no sign-up</Badge>
-              <Badge><Smartphone className="w-3 h-3" /> Works on phones</Badge>
-              <Badge><Code className="w-3 h-3" /> Open source</Badge>
-              <Badge><Shield className="w-3 h-3" /> NASA/IPAC IRSA data</Badge>
+            <div className="flex flex-wrap items-center gap-x-8 gap-y-2 font-telemetry-mono text-[11px] tracking-wide text-[#D5C5A8]/60 animate-fade-in-up">
+              <span>0.75–5.0 µm</span>
+              <span>D1–D6</span>
+              <span>Gaia DR3 astrometry</span>
+              <span>Blink · Diff · Shift-stack</span>
             </div>
           )}
         </div>

@@ -1,21 +1,54 @@
 @import "tailwindcss";
-@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap");
 
 :root {
   color-scheme: dark;
-  --obsidian: #05050a;
-  --panel: #0b0d13;
-  --panel-raised: #10131b;
-  --line: #202630;
-  --muted: #8c96a6;
-  --text: #e8edf5;
-  --cyan: #00f0ff;
-  --amber: #ffb703;
-  --danger: #ff647c;
+  /* Master antique-celestial-map palette */
+  --primary-navy: #0f1e36;      /* deep celestial navy background */
+  --primary-navy-2: #1c2541;    /* raised navy panel */
+  --parchment: #f3efea;         /* antique parchment text/lines */
+  --aged-tan: #d5c5a8;          /* muted tan contrast */
+  --star-gold: #e3b341;         /* celestial gold accents */
+  --star-gold-2: #f4d35e;       /* bright gold highlight */
+  --roman-crimson: #c84b31;     /* terra-cotta focal actions */
+  --roman-crimson-2: #e05a47;   /* crimson hover/infrared */
+  --sky-band: #48cae4;          /* thermal blue readouts */
+  --sky-band-2: #00b4d8;        /* deep sky-band blue */
+
+  /* Derived legacy tokens mapped onto the new palette */
+  --obsidian: var(--primary-navy);
+  --panel: rgba(243, 239, 234, 0.03);
+  --panel-raised: rgba(243, 239, 234, 0.055);
+  --line: rgba(243, 239, 234, 0.10);
+  --muted: #a9b4c6;
+  --text: #f3efea;
+  --cyan: var(--sky-band);
+  --amber: var(--star-gold);
+  --danger: var(--roman-crimson-2);
 }
 
 html {
   scroll-behavior: smooth;
+}
+
+body {
+  background:
+    radial-gradient(ellipse 90% 70% at 50% -10%, rgba(213, 197, 168, 0.04), transparent 60%),
+    var(--primary-navy);
+  color: var(--text);
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+.font-editorial {
+  font-family: "Cormorant Garamond", Georgia, serif;
+}
+
+.font-telemetry {
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+.font-telemetry-mono {
+  font-family: "JetBrains Mono", monospace;
 }
 
 @keyframes fade-in-up {
@@ -3190,19 +3223,18 @@ h2 {
 }
 
 /* Orion figure stage — kneels on the left, slight rise into place */
+/* Orion as a fixed atmospheric background texture — antique star-map style,
+   deeply faded into the navy so text always reads cleanly. */
 .orion-stage {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 46%;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
+  position: fixed;
+  inset: 0;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 2.4s ease;
-  z-index: 1;
+  transition: opacity 2.6s ease;
+  z-index: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .orion-stage.visible {
@@ -3210,31 +3242,19 @@ h2 {
 }
 
 .orion-figure {
-  width: min(34vw, 470px);
+  width: min(52vw, 780px);
+  opacity: 0.16;
   filter:
-    drop-shadow(0 0 26px rgba(255, 220, 150, 0.28))
-    drop-shadow(0 0 70px rgba(120, 170, 255, 0.14));
-  animation: orion-kneel 3.2s cubic-bezier(0.22, 1, 0.36, 1) forwards,
-    orion-breathe 7s ease-in-out 3.2s infinite alternate;
+    sepia(0.55) saturate(0.65) brightness(1.12)
+    drop-shadow(0 0 60px rgba(227, 179, 65, 0.10));
+  -webkit-mask-image: radial-gradient(ellipse 72% 62% at 62% 46%, black 32%, transparent 74%);
+  mask-image: radial-gradient(ellipse 72% 62% at 62% 46%, black 32%, transparent 74%);
+  animation: orion-drift 9s ease-in-out infinite alternate;
 }
 
-@keyframes orion-kneel {
-  0% {
-    transform: translateY(9%) scale(0.94);
-    opacity: 0;
-  }
-  55% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(0) scale(1);
-    opacity: 1;
-  }
-}
-
-@keyframes orion-breathe {
+@keyframes orion-drift {
   from { transform: translateY(0) scale(1); }
-  to { transform: translateY(-0.9%) scale(1.008); }
+  to { transform: translateY(-1.6%) scale(1.022); }
 }
 
 /* the sparkling star in Orion's palm */
@@ -3324,15 +3344,35 @@ h2 {
 }
 
 /* Roman-engraving serif title with gentle tracking-in */
+.cta-roman {
+  background: linear-gradient(135deg, #c84b31 0%, #e05a47 55%, #e3b341 130%);
+  border: 1px solid rgba(244, 211, 94, 0.35);
+  box-shadow:
+    0 2px 18px rgba(200, 75, 49, 0.35),
+    inset 0 1px 0 rgba(244, 241, 222, 0.18);
+  transition: transform 0.2s ease, box-shadow 0.25s ease, filter 0.2s ease;
+}
+
+.cta-roman:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 4px 30px rgba(224, 90, 71, 0.55),
+    0 0 22px rgba(227, 179, 65, 0.35),
+    inset 0 1px 0 rgba(244, 241, 222, 0.25);
+  filter: saturate(1.1);
+}
+
+.cta-roman:active {
+  transform: translateY(0);
+}
+
 .hero-title {
   font-family: "Cormorant Garamond", "Garamond", "Georgia", "Times New Roman", serif;
   font-weight: 600;
-  color: #f5efe2;
+  color: #f3efea;
   text-shadow:
-    0 1px 0 rgba(0, 0, 0, 0.6),
-    0 0 42px rgba(255, 220, 150, 0.18),
-    0 0 110px rgba(120, 170, 255, 0.12);
-  letter-spacing: 0.01em;
+    0 1px 0 rgba(0, 0, 0, 0.55),
+    0 0 48px rgba(227, 179, 65, 0.16);
   animation: title-arrive 2.2s cubic-bezier(0.19, 1, 0.22, 1) both;
 }
 
