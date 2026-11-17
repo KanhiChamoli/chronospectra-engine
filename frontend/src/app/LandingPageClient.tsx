@@ -361,7 +361,7 @@ function NavLink({ href, children, external = false, onClick }: { href: string; 
       target={external ? "_blank" : undefined}
       rel={external ? "noopener noreferrer" : undefined}
       onClick={onClick}
-      className="text-sm font-medium text-[#F3EFEA]/75 hover:text-[#E3B341] transition-colors duration-200 flex items-center gap-1"
+      className="text-[13px] text-[#F3EFEA]/70 hover:text-[#F3EFEA] transition-colors flex items-center gap-1"
     >
       {children}
       {external && <ExternalLink className="w-3 h-3" />}
@@ -383,8 +383,8 @@ function CTAButton({
 } & Record<string, unknown>) {
   const baseStyles = "inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0F1E36]";
   const variants = {
-    primary: "bg-[#E3B341] text-[#0F1E36] hover:bg-[#F4D35E] hover:shadow-[0_0_28px_rgba(227,179,65,0.25)] focus:ring-[#E3B341]",
-    secondary: "bg-[#C84B31] text-[#0F1E36] hover:bg-[#E05A47] hover:shadow-[0_0_28px_rgba(200,75,49,0.25)] focus:ring-amber-500",
+    primary: "bg-gradient-to-r from-[#C84B31] to-[#E3B341] text-[#0F1E36] hover:brightness-110 hover:shadow-[0_0_28px_rgba(227,179,65,0.25)] focus:ring-[#E3B341]",
+    secondary: "bg-[#C84B31] text-[#F3EFEA] hover:bg-[#E05A47] hover:shadow-[0_0_28px_rgba(200,75,49,0.25)] focus:ring-[#E3B341]",
     ghost: "bg-transparent border border-[#F3EFEA]/15 text-[#F3EFEA]/85 hover:border-[#E3B341] hover:text-[#E3B341] hover:bg-[#48CAE4]/5 focus:ring-[#E3B341]",
   };
   return <Component className={`${baseStyles} ${variants[variant]} ${className}`} {...props}>{children}</Component>;
@@ -515,47 +515,39 @@ function Hero({ onEnter }: { onEnter?: () => void }) {
   }, []);
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16 lg:pt-20">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#0F1E36] pt-16 lg:pt-20">
       <StarfieldBackground />
       {/* cinematic interstellar-style nebula haze */}
-      <div className="absolute inset-0 hero-nebula" aria-hidden="true" />
+      <div className="absolute inset-0 hero-nebula opacity-70" aria-hidden="true" /><div className="pointer-events-none absolute -left-[15%] top-[15%] h-[60vmin] w-[60vmin] rounded-full bg-[radial-gradient(circle,rgba(200,75,49,0.16)_0%,rgba(227,179,65,0.07)_35%,transparent_70%)] blur-3xl animate-pulse-slow" aria-hidden="true" /><div className="pointer-events-none absolute right-[8%] top-[28%] h-[38vmin] w-[38vmin] rounded-full bg-[radial-gradient(circle,rgba(15,30,54,0)_0%,rgba(72,202,228,0.10)_40%,rgba(227,179,65,0.05)_60%,transparent_72%)] blur-2xl animate-[spin_90s_linear_infinite]" aria-hidden="true" />
       <ConstellationArtLayered variant="hero" />
-      <div className="absolute inset-0 bg-gradient-to-b from-[#0F1E36]/70 via-transparent to-[#0F1E36]" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0F1E36]/20 via-transparent to-[#0F1E36]" />
 
       {/* Orion figure, kneeling on the left, palm star sparkling */}
-      <div className={`orion-stage ${phase >= 1 ? "visible" : ""}`} aria-hidden="true">
-        <img src="/constellations/orion.png" alt="" className="orion-figure" />
-        {phase >= 3 && (
-          <div className="orion-star">
-            <span className="orion-star-core" />
-            <span className="orion-star-ray ray-1" />
-            <span className="orion-star-ray ray-2" />
-            <span className="orion-star-ring" />
-          </div>
-        )}
-        {phase >= 4 && <div className="orion-nebula-bloom" />}
+      <div className={`absolute inset-0 z-[1] transition-opacity duration-[2000ms] ${phase >= 1 ? "opacity-100" : "opacity-0"}`} aria-hidden="true">
+        <img src="/constellations/orion-hero.png" alt="" className="absolute right-[-8%] top-1/2 h-[120%] w-auto max-w-none -translate-y-1/2 object-contain opacity-30 mix-blend-screen sm:right-[-2%] sm:opacity-40 lg:right-[3%] lg:h-[130%] lg:opacity-50" style={{filter:"saturate(1.05) brightness(1.1) drop-shadow(0 0 50px rgba(227,179,65,0.12))"}} />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0F1E36] via-[#0F1E36]/75 to-transparent" /><div className="absolute inset-0 bg-gradient-to-t from-[#0F1E36] via-transparent to-[#0F1E36]/30" />
       </div>
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
         <div className="text-center max-w-4xl mx-auto">
           {phase >= 5 && (
             <>
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#48CAE4]/30 bg-[#48CAE4]/10 text-[#48CAE4] text-sm font-medium mb-8 animate-fade-in-up">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#F3EFEA]/10 bg-[#F3EFEA]/[0.03] backdrop-blur-md text-[#F3EFEA]/80 text-[10px] font-mono tracking-[0.2em] mb-8 animate-fade-in-up">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#E3B341] opacity-75" />
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-[#E3B341]" />
                 </span>
-                NASA Space Apps 2026 Challenge Entry
+                NASA SPACE APPS CHALLENGE 2026 · SPHEREx INFRARED SUITE
               </div>
 
-              <h1 className="hero-title text-5xl sm:text-6xl lg:text-7xl xl:text-8xl tracking-tighter leading-tight mb-8">
+              <h1 className="hero-title font-serif text-5xl sm:text-6xl lg:text-7xl tracking-tight leading-[1.08] mb-8 text-[#F3EFEA]">
                 Explore the dynamic
                 <br />
                 <span className="relative">
-                  <span className="relative z-10 bg-gradient-to-r from-[#F4D35E] via-[#E3B341] to-[#F4D35E] bg-clip-text text-transparent animate-shimmer">
+                  <span className="relative z-10 bg-gradient-to-r from-[#E3B341] via-[#F4D35E] to-[#C84B31] bg-clip-text text-transparent">
                     infrared universe
                   </span>
-                  <span className="absolute inset-0 bg-gradient-to-r from-[#48CAE4] via-[#E3B341] to-[#48CAE4] blur-2xl opacity-25 -z-10 animate-pulse-slow" />
+                  
                 </span>
                 <br />
                 across 102 colors
@@ -655,7 +647,7 @@ function ObservatoryShowcase() {
           <Badge className="mb-4" style={{ background: "rgba(72,202,228,0.1)", borderColor: "rgba(72,202,228,0.3)" }}>
             <Sparkles className="w-3 h-3" /> Observatory Tools
           </Badge>
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-[#F3EFEA] mb-6">
+          <h2 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-[#F3EFEA] mb-6">
             Discovery-grade
             <span className="bg-gradient-to-r from-[#48CAE4] to-[#E3B341] bg-clip-text text-transparent"> analysis suite</span>
           </h2>
@@ -668,7 +660,7 @@ function ObservatoryShowcase() {
                 <span className="text-3xl">{c.icon}</span>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-[#48CAE4] bg-[#48CAE4]/10 border border-[#48CAE4]/30 px-2 py-0.5 rounded-full">{c.tag}</span>
               </div>
-              <h3 className="text-lg font-bold text-[#F3EFEA] mb-2 group-hover:text-[#E3B341] transition-colors">{c.title}</h3>
+              <h3 className="font-serif text-lg font-semibold text-[#F3EFEA] mb-2 group-hover:text-[#E3B341] transition-colors">{c.title}</h3>
               <p className="text-sm text-[#F3EFEA]/65 leading-relaxed">{c.desc}</p>
             </div>
           ))}
@@ -716,7 +708,7 @@ function HowItWorks() {
       description: "Validate candidates against SIMBAD, TIC, and Gaia catalogs. Export light curves, spectra, and cutouts. Generate reproducible analysis links for collaboration.",
       icon: CheckCircle,
       color: "text-[#48CAE4]",
-      bgColor: "bg-[#48CAE4]/10 border-green-500/20",
+      bgColor: "bg-[#48CAE4]/10 border-[#48CAE4]/20",
     },
   ];
 
@@ -730,7 +722,7 @@ function HowItWorks() {
           <Badge className="mb-4" style={{ background: "rgba(72, 202, 228, 0.1)", borderColor: "rgba(72, 202, 228, 0.3)" }}>
             <Sparkles className="w-3 h-3" /> How It Works
           </Badge>
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-[#F3EFEA] mb-6">
+          <h2 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-[#F3EFEA] mb-6">
             From photons to
             <span className="bg-gradient-to-r from-[#48CAE4] to-[#E3B341] bg-clip-text text-transparent"> discoveries</span>
             in four steps
@@ -744,7 +736,7 @@ function HowItWorks() {
           {steps.map((step, index) => (
             <div
               key={step.number}
-              className={`relative p-6 lg:p-8 rounded-2xl border ${step.bgColor} bg-[#F3EFEA]/[0.03] group transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(227,179,65,0.12)]`}
+              className="relative p-6 lg:p-8 rounded-2xl border border-[#F3EFEA]/10 bg-[#F3EFEA]/[0.03] backdrop-blur-md group transition-all duration-300 hover:border-[#F3EFEA]/20 hover:shadow-[0_0_30px_rgba(227,179,65,0.08)]"
               style={{ animationDelay: `${index * 150}ms` }}
             >
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-current to-transparent opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: step.color.replace("text-", "") }} />
@@ -755,7 +747,7 @@ function HowItWorks() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-3">
                     <step.icon className="w-5 h-5" style={{ color: step.color.replace("text-", "") }} />
-                    <h3 className="text-xl font-bold text-[#F3EFEA]">{step.title}</h3>
+                    <h3 className="font-serif text-xl font-semibold text-[#F3EFEA]">{step.title}</h3>
                   </div>
                   <p className="text-[#F3EFEA]/75 leading-relaxed">{step.description}</p>
                 </div>
@@ -786,7 +778,7 @@ function FeatureCard({ title, description, icon: Icon, features, color, bgColor,
           <Icon className={`w-6 h-6 ${color}`} />
         </div>
         <div>
-          <h3 className="text-xl font-bold text-[#F3EFEA] mb-2">{title}</h3>
+          <h3 className="font-serif text-xl font-semibold text-[#F3EFEA] mb-2">{title}</h3>
           <p className="text-[#F3EFEA]/65">{description}</p>
         </div>
       </div>
@@ -822,7 +814,7 @@ function Features() {
           icon: Zap,
           features: ["Pixel-level image subtraction", "Significance mapping (σ)", "Automatic artifact rejection", "Residual visualization"],
           color: "text-[#C84B31]",
-          bgColor: "bg-red-500/10",
+          bgColor: "bg-[#C84B31]/10",
           borderColor: "border-[#C84B31]/20",
         },
         {
@@ -840,8 +832,8 @@ function Features() {
           icon: Target,
           features: ["Interactive band picker", "Wavelength coverage display", "Band-specific zeropoints", "SED construction across epochs"],
           color: "text-[#C84B31]",
-          bgColor: "bg-purple-500/10",
-          borderColor: "border-purple-500/20",
+          bgColor: "bg-[#D5C5A8]/10",
+          borderColor: "border-[#D5C5A8]/20",
         },
       ],
     },
@@ -855,7 +847,7 @@ function Features() {
           features: ["Proper motion detection vs Gaia", "Variability significance testing", "Extremely red source identification", "Candidate ranking by S/N"],
           color: "text-[#48CAE4]",
           bgColor: "bg-[#48CAE4]/10",
-          borderColor: "border-green-500/20",
+          borderColor: "border-[#48CAE4]/20",
         },
         {
           title: "Light Curves & Spectra",
@@ -863,8 +855,8 @@ function Features() {
           icon: BarChart2,
           features: ["Multi-epoch light curves", "SED fitting and modeling", "Periodogram analysis", "Flux calibration per epoch"],
           color: "text-[#48CAE4]",
-          bgColor: "bg-blue-500/10",
-          borderColor: "border-blue-500/20",
+          bgColor: "bg-[#48CAE4]/10",
+          borderColor: "border-[#48CAE4]/20",
         },
         {
           title: "Verification Tables",
@@ -872,8 +864,8 @@ function Features() {
           icon: Search,
           features: ["Gaia DR3 proper motion check", "SIMBAD classification lookup", "TIC/2MASS photometry", "Contamination probability"],
           color: "text-[#C84B31]",
-          bgColor: "bg-orange-500/10",
-          borderColor: "border-orange-500/20",
+          bgColor: "bg-[#E3B341]/10",
+          borderColor: "border-[#E3B341]/20",
         },
       ],
     },
@@ -887,7 +879,7 @@ function Features() {
           <Badge className="mb-4" style={{ background: "rgba(227, 179, 65, 0.1)", borderColor: "rgba(227, 179, 65, 0.3)" }}>
             <Zap className="w-3 h-3" /> Feature Highlights
           </Badge>
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-[#F3EFEA] mb-6">
+          <h2 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-[#F3EFEA] mb-6">
             Tools built for
             <span className="bg-gradient-to-r from-[#E3B341] to-[#48CAE4] bg-clip-text text-transparent"> discovery</span>
           </h2>
@@ -898,7 +890,7 @@ function Features() {
 
         {featureGroups.map((group, groupIndex) => (
           <div key={group.title} className="mb-16 lg:mb-20">
-            <h3 className="text-2xl font-bold text-[#F3EFEA] mb-8 flex items-center gap-3">
+            <h3 className="font-serif text-2xl font-semibold text-[#F3EFEA] mb-8 flex items-center gap-3">
               <span className="font-mono text-[#48CAE4]">{String(groupIndex + 1).padStart(2, "0")}</span>
               {group.title}
             </h3>
@@ -944,7 +936,7 @@ function Team() {
           <Badge className="mb-4" style={{ background: "rgba(227, 179, 65, 0.1)", borderColor: "rgba(227, 179, 65, 0.3)" }}>
             <Users className="w-3 h-3" /> Made By
           </Badge>
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-[#F3EFEA] mb-6">
+          <h2 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-[#F3EFEA] mb-6">
             A mission driven by
             <span className="bg-gradient-to-r from-[#E3B341] to-[#48CAE4] bg-clip-text text-transparent"> curiosity</span>
           </h2>
@@ -955,7 +947,7 @@ function Team() {
 
         <div className="grid lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
           {teamMembers.map((member) => (
-            <div key={member.name} className="relative p-8 lg:p-10 rounded-3xl border border-[#F3EFEA]/10 bg-[#F3EFEA]/[0.03] group">
+            <div key={member.name} className="relative p-8 lg:p-10 rounded-3xl border border-[#F3EFEA]/10 bg-[#F3EFEA]/[0.03] backdrop-blur-md group">
               <div className="absolute inset-0 bg-gradient-to-br from-[#48CAE4]/5 via-transparent to-[#C84B31]/5 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#48CAE4] via-[#E3B341] to-cyan-500" />
 
@@ -969,7 +961,7 @@ function Team() {
 
                 <div className="flex-1 min-w-0 pt-2">
                   <div className="flex items-baseline gap-3 mb-3">
-                    <h3 className="text-2xl lg:text-3xl font-semibold text-[#F3EFEA]">{member.name}</h3>
+                    <h3 className="font-serif text-2xl lg:text-3xl font-semibold text-[#F3EFEA]">{member.name}</h3>
                     <span className="px-3 py-1 text-xs font-medium rounded-full bg-[#48CAE4]/15 text-[#48CAE4] border border-[#48CAE4]/30">
                       Grade 10
                     </span>
@@ -1062,7 +1054,7 @@ function Contact() {
             <Badge className="mb-4" style={{ background: "rgba(72, 202, 228, 0.1)", borderColor: "rgba(72, 202, 228, 0.3)" }}>
               <Mail className="w-3 h-3" /> Get In Touch
             </Badge>
-            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-[#F3EFEA] mb-6">
+            <h2 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-[#F3EFEA] mb-6">
               Send a
               <span className="bg-gradient-to-r from-[#48CAE4] to-[#E3B341] bg-clip-text text-transparent"> message</span>
             </h2>
@@ -1072,7 +1064,7 @@ function Contact() {
             </p>
 
             <div className="space-y-6">
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-[#F3EFEA]/[0.03] border border-[#F3EFEA]/10">
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-[#F3EFEA]/[0.03] border border-[#F3EFEA]/10 backdrop-blur-md">
                 <div className="p-3 rounded-xl bg-[#48CAE4]/10 border border-[#48CAE4]/20">
                   <Mail className="w-6 h-6 text-[#48CAE4]" />
                 </div>
@@ -1081,7 +1073,7 @@ function Contact() {
                   <a href="mailto:kanhi.chamoli@example.com" className="text-[#F3EFEA] hover:text-[#E3B341] transition-colors">kanhi.chamoli@example.com</a>
                 </div>
               </div>
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-[#F3EFEA]/[0.03] border border-[#F3EFEA]/10">
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-[#F3EFEA]/[0.03] border border-[#F3EFEA]/10 backdrop-blur-md">
                 <div className="p-3 rounded-xl bg-[#E3B341]/10 border border-[#E3B341]/20">
                   <MapPin className="w-6 h-6 text-[#E3B341]" />
                 </div>
@@ -1090,8 +1082,8 @@ function Contact() {
                   <p className="text-[#F3EFEA]">Bangalore, India</p>
                 </div>
               </div>
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-[#F3EFEA]/[0.03] border border-[#F3EFEA]/10">
-                <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20">
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-[#F3EFEA]/[0.03] border border-[#F3EFEA]/10 backdrop-blur-md">
+                <div className="p-3 rounded-xl bg-[#D5C5A8]/10 border border-[#D5C5A8]/20">
                   <Globe className="w-6 h-6 text-[#C84B31]" />
                 </div>
                 <div>
@@ -1102,7 +1094,7 @@ function Contact() {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="relative p-8 lg:p-10 rounded-3xl border border-[#F3EFEA]/10 bg-[#F3EFEA]/[0.03]" noValidate>
+          <form onSubmit={handleSubmit} className="relative p-8 lg:p-10 rounded-3xl border border-[#F3EFEA]/10 bg-[#F3EFEA]/[0.03] backdrop-blur-md" noValidate>
             <div className="absolute inset-0 bg-gradient-to-br from-[#48CAE4]/5 via-transparent to-[#C84B31]/5 rounded-3xl" />
             <div className="relative space-y-6">
               <div className="grid sm:grid-cols-2 gap-6">
@@ -1355,7 +1347,7 @@ function SameSkyDifferentLight() {
         <Badge className="mb-4" style={{ background: "rgba(227,179,65,0.1)", borderColor: "rgba(227,179,65,0.3)" }}>
           <Eye className="w-3 h-3" /> Two eyes on one sky
         </Badge>
-        <h2 className="mb-4 text-3xl font-semibold tracking-tight text-[#F3EFEA] sm:text-5xl">
+        <h2 className="mb-4 font-serif text-3xl font-semibold tracking-tight text-[#F3EFEA] sm:text-5xl">
           Same sky, <span className="bg-gradient-to-r from-sky-200 to-[#E3B341] bg-clip-text text-transparent">different light.</span>
         </h2>
         <p className="mx-auto mb-10 max-w-2xl text-[#F3EFEA]/65">
@@ -1376,7 +1368,7 @@ function SpherexModelSection() {
           <Badge className="mb-4" style={{ background: "rgba(72,202,228,0.1)", borderColor: "rgba(72,202,228,0.3)" }}>
             <Sparkles className="h-3 w-3" /> Meet the spacecraft
           </Badge>
-          <h2 className="mb-4 text-3xl font-semibold tracking-tight text-[#F3EFEA] sm:text-4xl">
+          <h2 className="mb-4 font-serif text-3xl font-semibold tracking-tight text-[#F3EFEA] sm:text-4xl">
             The telescope behind the data
           </h2>
           <p className="mb-4 text-[#F3EFEA]/65">
@@ -1419,7 +1411,7 @@ export default function LandingPageClient() {
 function TourPromptModal({ onClose }: { onClose: () => void }) {
   return (
     <div
-      className="fixed inset-0 z-[100] grid place-items-center bg-black/80 backdrop-blur px-4"
+      className="fixed inset-0 z-[100] grid place-items-center bg-[#0B132B]/85 backdrop-blur px-4"
       role="dialog"
       aria-modal="true"
       aria-label="Guided tour"
@@ -1427,7 +1419,7 @@ function TourPromptModal({ onClose }: { onClose: () => void }) {
     >
       <div className="w-full max-w-md rounded-2xl border border-[#48CAE4]/40 bg-[#0F1E36]/95 p-8 text-center shadow-[0_0_60px_rgba(0,240,255,0.12)]">
         <div className="mb-4 text-4xl" aria-hidden="true">🛰️</div>
-        <h2 className="mb-2 text-xl font-bold text-[#F3EFEA]">Would you like a guided tour of the observatory?</h2>
+        <h2 className="mb-2 font-serif text-xl font-semibold text-[#F3EFEA]">Would you like a guided tour of the observatory?</h2>
         <p className="mb-6 text-sm text-[#F3EFEA]/65">
           A 20-step field guide with voice narration walks you through presets, blink playback, Gaia verification and the spectral plots. You can skip it at any time.
         </p>
