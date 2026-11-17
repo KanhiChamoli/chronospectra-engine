@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${cinzel.variable} ${inter.variable}`}>
-      <body className="font-sans antialiased bg-[#03050a] text-[#e2e8f0]">{children}</body>
+      <body className="bg-[#0F1E36] text-[#F3EFEA] antialiased font-sans">{children}</body>
     </html>
   );
 }

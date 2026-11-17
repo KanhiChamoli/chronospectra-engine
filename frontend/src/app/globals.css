@@ -4,23 +4,31 @@
 @theme {
   --font-serif: var(--font-cinzel), ui-serif, Georgia, serif;
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --color-void: #020204;
-  --color-infrared: #ff7b00;
-  --color-cyan: #00f0ff;
-  --color-violet: #9d4edd;
+  --color-primary-navy: #0F1E36;
+  --color-parchment: #F3EFEA;
+  --color-star-gold: #E3B341;
+  --color-roman-crimson: #C84B31;
+  --color-aged-tan: #D5C5A8;
+  --color-sky-band: #48CAE4;
+  --color-sky-band-deep: #00B4D8;
 }
 
 :root {
   color-scheme: dark;
-  --obsidian: #020204;
-  --panel: #0b0d13;
-  --panel-raised: #10131b;
-  --line: rgba(255, 255, 255, 0.08);
-  --muted: #8c96a6;
-  --text: #e8edf5;
-  --cyan: #00f0ff;
-  --amber: #ff7b00;
-  --danger: #ff647c;
+  --primary-navy: #0F1E36;
+  --parchment: #F3EFEA;
+  --star-gold: #E3B341;
+  --roman-crimson: #C84B31;
+  --aged-tan: #D5C5A8;
+  --obsidian: #0F1E36;
+  --panel: rgba(243, 239, 234, 0.03);
+  --panel-raised: rgba(243, 239, 234, 0.05);
+  --line: rgba(244, 241, 222, 0.08);
+  --muted: rgba(243, 239, 234, 0.62);
+  --text: #F3EFEA;
+  --cyan: #48CAE4;
+  --amber: #E3B341;
+  --danger: #E05A47;
 }
 
 html {
@@ -77,7 +85,8 @@ body {
 
 body {
   margin: 0;
-  background: var(--obsidian);
+  background-color: var(--primary-navy);
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(213, 197, 168, 0.04), transparent 60%);
   color: var(--text);
   font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   font-size: 14px;
@@ -86,8 +95,15 @@ body {
 .observatory {
   font-family: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   font-size: 13px;
-  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M12 1v6m0 10v6M1 12h6m10 0h6' stroke='%2300f0ff' stroke-width='1.5'/%3E%3Ccircle cx='12' cy='12' r='3' fill='%2300f0ff'/%3E%3C/svg%3E") 12 12, crosshair;
-  background: radial-gradient(ellipse at 12% 0%, rgb(0 240 255 / 5%), transparent 34rem), var(--obsidian);
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M12 1v6m0 10v6M1 12h6m10 0h6' stroke='%23E3B341' stroke-width='1.5'/%3E%3Ccircle cx='12' cy='12' r='3' fill='%23E3B341'/%3E%3C/svg%3E") 12 12, crosshair;
+  background-color: var(--primary-navy);
+  background-image: radial-gradient(ellipse at 12% 0%, rgba(213, 197, 168, 0.04), transparent 34rem);
+}
+
+.console-card {
+  background: rgba(243, 239, 234, 0.03);
+  border: 1px solid rgba(243, 239, 234, 0.1);
+  backdrop-filter: blur(12px);
 }
 
 button,
@@ -126,7 +142,7 @@ input:focus-visible {
   gap: 20px;
   padding: 0 30px;
   border-bottom: 1px solid var(--line);
-  background: rgb(5 5 10 / 92%);
+  background: rgba(15, 30, 54, 0.92);
   backdrop-filter: blur(18px);
 }
 
@@ -146,10 +162,10 @@ input:focus-visible {
   width: 30px;
   height: 30px;
   place-items: center;
-  border: 1px solid rgb(0 240 255 / 45%);
+  border: 1px solid rgba(227, 179, 65, 0.45);
   border-radius: 8px;
   color: var(--cyan);
-  box-shadow: inset 0 0 18px rgb(0 240 255 / 8%);
+  box-shadow: inset 0 0 18px rgba(227, 179, 65, 0.08);
 }
 
 .brand-mark svg {
@@ -3399,5 +3415,6 @@ h2 {
     transition: none;
   }
 }
+
 
 
